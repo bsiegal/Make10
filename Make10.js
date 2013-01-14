@@ -112,13 +112,6 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
         this.group = group;
     };    
     
-    this.setPosition = function(/*int*/ x, /*int*/ y) {
-        this.x = x;
-        this.y = y;
-        this.group.attrs.x = x;
-        this.group.attrs.y = y;
-    };
-
     this.transitionTo = function(/*int*/ x, /*int*/ y) {
         var thiz = this;
         this.group.transitionTo({
@@ -138,6 +131,30 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     this.init();
 };
 
+function TileRow() {
+    this.tiles = [];
+    this.group = new Kinetic.Group();
+    
+    this.init = function() {
+        
+        Make10.consoleLog('Tile.initRow');
+    };
+    
+    this.addTile = function(/*int*/ index, /*Tile*/ tile) {
+        this.tiles[index] = tile;
+        this.group.add(tile.group);
+        Make10.consoleLog('TileRow.addTile: tiles.length = ' + this.tiles.length);
+    };
+    
+    this.transitionUp = function() {
+        this.group.transitionTo({
+            y: -TILE_HEIGHT,
+            duration: 0.5
+        });
+    };
+    
+    this.init();
+}
 
 var Make10 = {
     debug: true,
@@ -227,32 +244,26 @@ var Make10 = {
          */
         for (var i = 0, len = Make10.tileRows.length; i < len; i++) {
             Make10.consoleLog('addWallRow, inside loop of existing tileRows i = ' + i + "tilerowGroup :");
-            var tileRowGroup = Make10.tileRows[i];
-            Make10.consoleLog(tileRowGroup);
-            tileRowGroup.transitionTo({
-                y: -TILE_HEIGHT,
-                duration: 1,
-                callback: function() {
-                    Make10.consoleLog('transitioned row done');
-                }
-            });
+            var tileRow = Make10.tileRows[i];
+            tileRow.transitionUp();
             Make10.consoleLog('addWallRow, inside loop of existing tileRows after transition called ');
         }
         /*
          * Add row of tiles for the wall inserting into the beginning of the array
          */
         var y = STAGE_HEIGHT - TILE_HEIGHT;
-        var tileGroup = new Kinetic.Group();
-        Make10.wallLayer.add(tileGroup);
+        var tileRow = new TileRow();
+        Make10.wallLayer.add(tileRow.group);
         
         for (var i = 0; i < Make10.makeValue; i++) {
             var val = Make10.genRandom();
             var x = i * TILE_WIDTH;
             var tile = new Tile(val, x, y, 'wall'); 
-            tileGroup.add(tile.group);
+            //tileRow.group.add(i, tile.group);
+            tileRow.addTile(i, tile);
         }
         
-        Make10.tileRows.unshift(tileGroup);            
+        Make10.tileRows.unshift(tileRow);            
 
         Make10.wallLayer.draw();
         Make10.consoleLog('initWallLayer wallLayer drawn');
@@ -263,8 +274,21 @@ var Make10 = {
         Make10.consoleLog('createNext');
         /*
          * create a tile and place in upper left corner
+         * (value must make 10 with at least one tile from wall)
          */
-        var val = Make10.genRandom();
+        var val = undefined;
+        while (!val)  {
+            val = Make10.genRandom();
+
+            for (var i = 0, len = Make10.tileRows.length; i < len; i++) {
+                Make10.consoleLog('createNext, inside loop of existing tileRows i = ' + i + "tilerowGroup :");
+                var tileRowGroup = Make10.tileRows[i];
+                Make10.consoleLog(tileRowGroup);
+                
+                Make10.consoleLog('createNext, inside loop of existing tileRows after transition called ');
+            }
+            
+        }
         Make10.nextTile = new Tile(val, 0, 0, 'next'); 
         Make10.waitingLayer.add(Make10.nextTile.group);
         Make10.waitingLayer.draw();
