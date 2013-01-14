@@ -32,13 +32,31 @@ var PIGGY_HEIGHT = null;
 var COIN_PADDING = null;
 
 function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
-    this.value = value;
+    /*
+     * int value of the tile
+     */
+    this.value = value; 
+    /*
+     * String type of tile: Valid values 'current', 'next', 'wall' 
+     */
+    this.type = tileType;
+    /*
+     * Kinetic.Group where the rect and text are
+     */
+    this.group = null; 
+    /*
+     * Of which TileRow this 'wall' tile is a member
+     */
+    this.tileRow = null;
+    /*
+     * int index of where in the TileRow it is a member
+     */
+    this.tileRowIndex = undefined;
     this.x = x;
     this.y = y;
-    this.type = tileType; //Valid values 'current', 'next', 'wall'
     
     this.init = function() {
-        Make10.consoleLog('Tile.init value = ' + this.value);
+        console.log('Tile.init value = ' + this.value);
         /*
          * For now just drawing a rectangle with a number value
          * (eventually use dots and Chinese character mahjong tile images?)
@@ -89,22 +107,15 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
          */
         var thiz = this;
         group.on('click touch', function() {
-            Make10.consoleLog('tile mouseout touchend value = ' + thiz.value + ', ' + thiz.type);
+            console.log('tile click touch value = ' + thiz.value + ', ' + thiz.type);
             if (thiz.type === 'wall') {
                 if (Make10.currentTile.value + thiz.value === Make10.makeValue) {
-                    Make10.consoleLog('made '+ Make10.currentTile.value + ' + ' + thiz.value + ' = '+ Make10.makeValue + '!');
-                    /*
-                     * Remove thiz.group from the wall group, 
-                     * Remove the current tile from the waitingLayer
-                     * Create a new current tile
-                     */
-                    thiz.group.remove();
-                    Make10.wallLayer.draw();
+
+                    Make10.valueMade(thiz);
                     
-                    Make10.currentTile.group.remove();
-                    Make10.waitingLayer.draw();
+                } else {
                     
-                    Make10.createCurrent();  
+                    Make10.valueNotMade(thiz);
                 }
             }
         });
@@ -113,14 +124,15 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     };    
     
     this.transitionTo = function(/*int*/ x, /*int*/ y) {
+        console.log('Tile.transition to x = ' + x + ' y = ' + y);
         var thiz = this;
         this.group.transitionTo({
             x: x,
             y: y,
-            duration: 1,
+            duration: 0.5,
             easing: 'ease-out',
             callback: function() {
-                Make10.consoleLog('Tile with value ' + thiz.value + ': x from ' + thiz.x + ' to ' + x + ', y from ' + thiz.y + ' to ' + y);
+                console.log('Tile with value ' + thiz.value + ': x from ' + thiz.x + ' to ' + x + ', y from ' + thiz.y + ' to ' + y);
             }
           });
         this.x = x;
@@ -128,6 +140,65 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
 
     };
     
+    this.destroy = function() {
+        if (this.type === 'wall') {
+            this.tileRow.removeTile(this.tileRowIndex);            
+        }
+        console.log('destroy group: ');
+        console.log(this.group);
+        // this is not a method on destroy this.group.destroy();
+        /*
+         * Destroy all children and remove group
+         * TODO
+         */
+        
+        this.group.remove();
+    };
+    
+    this.moveToWall = function(/*int*/ tileRowIndex, /*int*/ x, /*int*/ y) {
+        /*
+         * move this tile to the wall (must be current tile)
+         */
+        if (this.type === 'current') {
+            this.type = 'wall';
+            this.tileRowIndex = tileRowIndex;
+            
+            this.tileRow = new TileRow();
+            console.log('tileRow created, about to push to Make10.tileRows who has length= ' + Make10.tileRows.length);
+            Make10.tileRows.push(this.tileRow);    
+            
+            console.log('currentTile moved to wallLayer');
+            Make10.baseLayer.draw();
+            Make10.wallLayer.draw();
+            console.log('base and wallLayers redrawn');
+            
+            //TEMP for now always create a new TileRow
+            this.transitionTo(x, y);
+            console.log('tileRows after push length = ' + Make10.tileRows.length);
+            this.tileRow.addTile(tileRowIndex, this);
+            this.group.moveTo(Make10.wallLayer);
+            this.group.setListening(true);
+            console.log('moveToWall, group.getListening() = ' + this.group.getListening());
+            var thiz = this;
+            this.group.on('click touch', function() {
+                console.log('moveToWall.group.on tile click touch value = ' + thiz.value + ', ' + thiz.type);
+                if (thiz.type === 'wall') {
+                    if (Make10.currentTile.value + thiz.value === Make10.makeValue) {
+
+                        Make10.valueMade(thiz);
+                        
+                    } else {
+                        
+                        Make10.valueNotMade(thiz);
+                    }
+                }
+            });
+//            console.log('about to draw WallLayer');
+//            Make10.wallLayer.draw();
+//            
+        }
+  
+    };
     this.init();
 };
 
@@ -136,14 +207,23 @@ function TileRow() {
     this.group = new Kinetic.Group();
     
     this.init = function() {
-        
-        Make10.consoleLog('Tile.initRow');
+        console.log('TileRow.init');
+        for (var i = 0; i < Make10.makeValue; i++) {
+            this.tiles[i] = false; //initialize to have all 'false' values
+        }
     };
     
     this.addTile = function(/*int*/ index, /*Tile*/ tile) {
+        console.log('TileRow.addTile');
         this.tiles[index] = tile;
+        tile.tileRow = this;
+        tile.tileRowIndex = index;
         this.group.add(tile.group);
-        Make10.consoleLog('TileRow.addTile: tiles.length = ' + this.tiles.length);
+        console.log('TileRow.addTile end of addTile');
+    };
+    
+    this.removeTile = function(/*int*/ index) {
+        this.tiles[index] = false;
     };
     
     this.transitionUp = function() {
@@ -165,7 +245,7 @@ var Make10 = {
     /* Kinetic.Layer for wall */
     wallLayer: null,
     /* Kinetic.Layer for currentTile and nextTile */
-    waitingLayer: null,
+    baseLayer: null,
     /* array of Kinetic.Group of Tile objects for the wall -- a Kinetic.Group of Tiles is each row*/
     tileRows: [],
     /* Tile to be played */
@@ -187,7 +267,7 @@ var Make10 = {
     },    
         
     loadImages: function() {
-        Make10.consoleLog('loadImages');
+        console.log('loadImages');
         Make10.loadedImages = 0;
         for (var i = 1; i <= 9 ; i++) {
             var src = 'MJt' + i;
@@ -203,7 +283,7 @@ var Make10 = {
     },
        
     initLayers: function() {
-        Make10.consoleLog('initLayers');
+        console.log('initLayers');
         /*
          * Create the layer for the tiles in the wall.  This will listen
          * because touching tiles in the wall is how to move.
@@ -213,12 +293,13 @@ var Make10 = {
         });
         Make10.stage.add(Make10.wallLayer);
         /*
-         * Create the layer for the current tile to play and the tile on deck.
+         * Create the layer for the borders, current tile to play, the tile on deck
+         * and the score
          */
-        Make10.waitingLayer = new Kinetic.Layer({
+        Make10.baseLayer = new Kinetic.Layer({
             listening: false
         });
-        Make10.stage.add(Make10.waitingLayer);
+        Make10.stage.add(Make10.baseLayer);
         /*
          * Add 2 wall rows
          */
@@ -226,7 +307,6 @@ var Make10 = {
         Make10.addWallRow();
         Make10.createNext();
         Make10.createCurrent();
-
 
     },
 
@@ -238,15 +318,15 @@ var Make10 = {
     },
     
     addWallRow: function() {
-        Make10.consoleLog('addWallRow');
+        console.log('addWallRow');
         /*
          * For every existing row of tiles in the wall, transition them up one row
          */
         for (var i = 0, len = Make10.tileRows.length; i < len; i++) {
-            Make10.consoleLog('addWallRow, inside loop of existing tileRows i = ' + i + "tilerowGroup :");
+            console.log('addWallRow, inside loop of existing tileRows i = ' + i + "tilerowGroup :");
             var tileRow = Make10.tileRows[i];
             tileRow.transitionUp();
-            Make10.consoleLog('addWallRow, inside loop of existing tileRows after transition called ');
+            console.log('addWallRow, inside loop of existing tileRows after transition called ');
         }
         /*
          * Add row of tiles for the wall inserting into the beginning of the array
@@ -259,44 +339,54 @@ var Make10 = {
             var val = Make10.genRandom();
             var x = i * TILE_WIDTH;
             var tile = new Tile(val, x, y, 'wall'); 
-            //tileRow.group.add(i, tile.group);
             tileRow.addTile(i, tile);
         }
         
         Make10.tileRows.unshift(tileRow);            
-
+        console.log('tileRows after unshift length = ' + Make10.tileRows.length);
         Make10.wallLayer.draw();
-        Make10.consoleLog('initWallLayer wallLayer drawn');
+        console.log('initWallLayer wallLayer drawn');
 
     },
     
     createNext: function() {
-        Make10.consoleLog('createNext');
+        console.log('createNext');
+        /*
+         * To generate a value that must make a match with at
+         * least one tile somewhere in the wall, list out all the values
+         * in a single array then randomly generate an index then pull the value out
+         * of the Tile at that index.
+         */
+        var possibles = [];
+        
+        for (var i = Make10.tileRows.length - 1; i >= 0; i--) {
+            var tileRowGroup = Make10.tileRows[i];
+            for (var j = 0; j < Make10.makeValue; j++) {
+                if (tileRowGroup.tiles[j]) {
+                    possibles.push(tileRowGroup.tiles[j].value);
+                    console.log('createNext, possibles pushed ' + tileRowGroup.tiles[j].value);                    
+                }
+            }
+        }
+        var val;
+        if (possibles.length > 0) {
+            var randomIndex = Math.floor(Math.random() * (possibles.length - 1)) + 1;        
+            val = Make10.makeValue - possibles[randomIndex];
+        } else {
+            val = Make10.genRandom();
+        }
+        
         /*
          * create a tile and place in upper left corner
-         * (value must make 10 with at least one tile from wall)
          */
-        var val = undefined;
-        while (!val)  {
-            val = Make10.genRandom();
-
-            for (var i = 0, len = Make10.tileRows.length; i < len; i++) {
-                Make10.consoleLog('createNext, inside loop of existing tileRows i = ' + i + "tilerowGroup :");
-                var tileRowGroup = Make10.tileRows[i];
-                Make10.consoleLog(tileRowGroup);
-                
-                Make10.consoleLog('createNext, inside loop of existing tileRows after transition called ');
-            }
-            
-        }
         Make10.nextTile = new Tile(val, 0, 0, 'next'); 
-        Make10.waitingLayer.add(Make10.nextTile.group);
-        Make10.waitingLayer.draw();
+        Make10.baseLayer.add(Make10.nextTile.group);
+        Make10.baseLayer.draw();
 
     },
     
     createCurrent: function() {
-        Make10.consoleLog('createCurrent');
+        console.log('createCurrent');
         /*
          * Take the next tile
          * and move it to the current position
@@ -307,6 +397,42 @@ var Make10 = {
         Make10.createNext();
     },
     
+    valueMade: function(/*Tile*/ wallTile) {
+        console.log('valueMade: '+ Make10.currentTile.value + ' + ' + wallTile.value + ' = '+ Make10.makeValue + ' :)');
+        /*
+         * It's a match!
+         * Remove and destroy wallTile
+         * Remove the current tile from the baseLayer,
+         * Create a new current tile
+         */
+        wallTile.destroy();                    
+        Make10.wallLayer.draw();
+        
+        Make10.currentTile.destroy();
+        Make10.baseLayer.draw();
+        
+        Make10.createCurrent();      
+    },
+    
+    valueNotMade: function(/*Tile*/ wallTile) {
+        console.log('valueNotMade: NO MATCH! '+ Make10.currentTile.value + ' + ' + wallTile.value + ' != '+ Make10.makeValue);
+        /*
+         * It's not a match, so we must drop the tile on top of the one touched.
+         * Or if there is an exposed side, then on top of the column on the exposed side.
+         */
+        //TEMP for now just drop on top only
+        /*
+         * What row and column got touched?
+         */
+        var col = wallTile.tileRowIndex;
+        console.log('col = ' + col);
+        Make10.currentTile.moveToWall(col, TILE_WIDTH * col, TILE_HEIGHT * 2); //TODO y value
+        console.log('about to create another current');
+        Make10.createCurrent();
+        console.log('created another current');
+
+    },
+    
     whichPiggy: function(/*Coin*/ coin) {
         /*
          * Test all the piggies.  If it is close to the top/middle of one
@@ -315,9 +441,9 @@ var Make10 = {
         var a = coin.coin.getAbsolutePosition();
 
         for (var i = 0; i < Make10.piggies.length; i++) {
-            Make10.consoleLog('a.x = ' + a.x + ', a.y = ' + a.y);
+            console.log('a.x = ' + a.x + ', a.y = ' + a.y);
             var o = Make10.piggies[i].slotPosition;
-            Make10.consoleLog('i = ' + i + ': o.x = ' + o.x + ', o.y = ' + o.y);
+            console.log('i = ' + i + ': o.x = ' + o.x + ', o.y = ' + o.y);
             if (a.x > o.x - SLOT_TOLERANCE_X && a.x < o.x + SLOT_TOLERANCE_X && a.y > o.y - SLOT_TOLERANCE_Y) {                
                 return Make10.piggies[i];
             }
