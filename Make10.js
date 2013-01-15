@@ -225,11 +225,20 @@ function TileRow(/*int*/ tileRowIndex) {
         });
     };
     
+    this.isEmpty = function() {
+        for (var i = 0; i < Make10.makeValue; i++) {
+            if (this.tiles[i]) {
+                return false;
+            }
+        }
+        return true;
+    };
+    
     this.init();
 }
 
 var Make10 = {
-    debug: true,
+    debug: false,
     /* int - the number to add to */
     makeValue: 10,
     /* Kinetic.Stage - the stage */
@@ -247,7 +256,7 @@ var Make10 = {
     /* the interval variable for repeatedly adding wall rows*/
     addWallTimer: undefined,
     /* time in ms for the addWallTimer */
-    addWallTime: 4000,
+    addWallTime: 10000,
     /* map of file name to Image */
     images: {},
     /* int score */
@@ -417,8 +426,14 @@ var Make10 = {
          * Create a new current tile
          */
         Make10.currentTile.transitionTo(wallTile.x, wallTile.y - TILE_HEIGHT * wallTile.tileRow.tileRowIndex, function() {
+            var tileRow = wallTile.tileRow;
             wallTile.destroy();                    
             Make10.wallLayer.draw();
+            if (tileRow.isEmpty()) {
+                Make10.consoleLog('valueMade, tileRow is now empty');
+                Make10.tileRows.splice(tileRow.tileRowIndex, 1);
+                Make10.consoleLog('valueMade, tileRows was spliced so its length is now ' + Make10.tileRows.length);
+            }
             
             Make10.currentTile.destroy();
             Make10.baseLayer.draw();
