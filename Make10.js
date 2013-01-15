@@ -257,7 +257,7 @@ var Make10 = {
     /* the interval variable for repeatedly adding wall rows*/
     addWallTimer: undefined,
     /* time in ms for the addWallTimer */
-    addWallTime: 8000,
+    addWallTime: 12000,
     /* map of file name to Image */
     images: {},
     /* int score */
