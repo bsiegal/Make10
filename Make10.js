@@ -239,7 +239,7 @@ function TileRow(/*int*/ tileRowIndex) {
 }
 
 var Make10 = {
-    debug: false,
+    debug: true,
     /* int - the number to add to */
     makeValue: 10,
     /* Kinetic.Stage - the stage */
@@ -262,6 +262,10 @@ var Make10 = {
     images: {},
     /* int score */
     score: 0,
+    /* Kinetic.Group in the baseLayer to show when you earn points */
+    plus10: null,
+    /* Kinetic.Group in the baseLayer to show when you don't earn points */
+    plus0: null,
     
     init: function() {
         Make10.stage = new Kinetic.Stage({container: 'game', width: Constants.STAGE_WIDTH, height: Constants.STAGE_HEIGHT});
@@ -315,7 +319,8 @@ var Make10 = {
         Make10.addWallRow();
         Make10.createNext();
         Make10.createCurrent();
-
+        
+        Make10.createPoints();
     },
 
     genRandom: function() {
@@ -371,7 +376,8 @@ var Make10 = {
          * To generate a value that must make a match with at
          * least one tile somewhere in the wall, list out all the values
          * in a single array then randomly generate an index then pull the value out
-         * of the Tile at that index.
+         * of the Tile at that index. <-- That's actually a little too hard to make a row
+         * disappear, so let's stop after the equivalent of the first 2 rows
          */
         var possibles = [];
         
@@ -380,8 +386,14 @@ var Make10 = {
             for (var j = 0; j < Make10.makeValue; j++) {
                 if (tileRowGroup.tiles[j]) {
                     possibles.push(tileRowGroup.tiles[j].value);
-                    Make10.consoleLog('createNext, possibles pushed ' + tileRowGroup.tiles[j].value);                    
+                    Make10.consoleLog('createNext, possibles pushed ' + tileRowGroup.tiles[j].value);     
+                    if (possibles.length > Constants.MAX_COLS * 2) {
+                        break;
+                    }
                 }
+            }
+            if (possibles.length > Constants.MAX_COLS * 2) {
+                break;
             }
         }
         var val;
@@ -413,6 +425,58 @@ var Make10 = {
         Make10.createNext();
     },
     
+    createPoints: function() {
+        var p10 = new Kinetic.Group();
+        var star = new Kinetic.Star({
+            x: Constants.STAGE_WIDTH - 20,
+            y: 20,
+            numPoints: 9,
+            innerRadius: 12,
+            outerRadius: 20,
+            fill: 'yellow',
+            stroke: 'black',
+            strokeWidth: 1
+          });
+        p10.add(star);
+        var p10Txt = new Kinetic.Text({
+            x: Constants.STAGE_WIDTH - 30,
+            y: 15,
+            text: '+10',
+            fontSize: 12,
+            fontFamily: 'Calibri',
+            fill: 'black'
+          });
+        p10.add(p10Txt);
+        p10.setVisible(false);
+        Make10.baseLayer.add(p10);
+        Make10.plus10 = p10;
+        
+        var p0 = new Kinetic.Group();
+        var oct = new Kinetic.RegularPolygon({
+            x: Constants.STAGE_WIDTH - 20,
+            y: 20,
+            sides: 8,
+            radius: 20,
+            fill: 'red',
+            stroke: 'black',
+            strokeWidth: 1
+          });
+        p0.add(oct);
+        var p0Txt = new Kinetic.Text({
+            x: Constants.STAGE_WIDTH - 30,
+            y: 15,
+            text: '+ 0',
+            fontSize: 12,
+            fontFamily: 'Calibri',
+            fill: 'black'
+          });
+        p0.add(p0Txt);
+        p0.setVisible(false);
+        Make10.baseLayer.add(p0);
+        Make10.plus0 = p0;
+        Make10.baseLayer.draw();
+    },
+    
     valueMade: function(/*Tile*/ wallTile) {
         Make10.consoleLog('valueMade: '+ Make10.currentTile.value + ' + ' + wallTile.value + ' = '+ Make10.makeValue + ' :)');
         /*
@@ -433,7 +497,10 @@ var Make10 = {
             }
             
             Make10.currentTile.destroy();
+            
+            Make10.showPlus(10);            
             Make10.baseLayer.draw();
+            
             
             Make10.score += 10;
             
@@ -457,6 +524,7 @@ var Make10 = {
 //        Make10.currentTile.moveToWall(col, Constants.TILE_WIDTH * col, Constants.TILE_HEIGHT * (Constants.MAX_ROWS - 1 - wallTile.tileRow.tileRowIndex - 1));
         
         //FOR now just destroy it
+        Make10.showPlus(0);
         Make10.currentTile.destroy();
         Make10.baseLayer.draw();
         Make10.consoleLog('about to create another current');
@@ -464,6 +532,24 @@ var Make10 = {
         Make10.consoleLog('created another current');
 
     },  
+    
+    showPlus: function(/*int either 0 or 10*/ points) {
+        if (points === 10) {
+            Make10.plus10.setVisible(true);
+            Make10.baseLayer.draw();
+            setTimeout(function() {
+                Make10.plus10.setVisible(false);
+                Make10.baseLayer.draw();
+            }, 300);
+        } else if (points === 0) {
+            Make10.plus0.setVisible(true);
+            Make10.baseLayer.draw();
+            setTimeout(function() {
+                Make10.plus0.setVisible(false);
+                Make10.baseLayer.draw();
+            }, 300);
+        }
+    },
     
     endGame: function() {
         clearInterval(Make10.addWallTimer);
@@ -520,7 +606,7 @@ $(function() {
     
     Make10.init();
 
-    var play = $('#play');
+    var play = $('#start');
     
     play.click(function() {
         Make10.consoleLog('play clicked');
@@ -534,4 +620,5 @@ $(function() {
     $('#gameover').click(function() {
         document.location.reload(true);
     });
+        
 });

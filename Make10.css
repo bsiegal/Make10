@@ -13,29 +13,27 @@ html {
     border: 8px solid brown;
 }
 
-#play {
-    background-color: rgba(250,231,85,0.5);
-    font-weight: bold;
-    font-size: 40px;
+.overlay {
     position: absolute;
     top: 0px;
     left: 0px;
     height: 100%;
-    width: 100%;
+    width: 100%;    
+}
+
+#start {
+    background-color: rgba(250,231,85,0.5);
+    font-weight: bold;
+    font-size: 40px;
 }
 
 #gameover {
     background-color: rgba(250,25,250,0.5);
     font-weight: bold;
     font-size: 28px;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    height: 100%;
-    width: 100%;
 }
 
-#play > div, #score {
+#play, #score {
     text-align: center;
     margin-top: 200px;
     cursor: pointer;
