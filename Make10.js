@@ -99,8 +99,8 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
          * to test if the current tile plus
          */
         var thiz = this;
-        group.on('click touch', function() {
-            Make10.consoleLog('tile click touch value = ' + thiz.value + ', ' + thiz.type);
+        group.on('click tap', function() {
+            Make10.consoleLog('tile click tap value = ' + thiz.value + ', ' + thiz.type);
             if (thiz.type === 'wall') {
                 if (Make10.currentTile.value + thiz.value === Make10.makeValue) {
 
