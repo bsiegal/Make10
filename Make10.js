@@ -19,17 +19,10 @@
 var TILE_WIDTH = 44;
 var TILE_HEIGHT = 60;
 
-//set in Make10.resize
 var STAGE_WIDTH = 440;
 var STAGE_HEIGHT = 600;
-var PADDING = null;
-var CENTERX = null;
-var CENTERY = null;
-var THOUGHT_WIDTH = null;
-var THOUGHT_HEIGHT = null;
-var PIGGY_WIDTH = null;
-var PIGGY_HEIGHT = null;
-var COIN_PADDING = null;
+
+var MAX_WALL_INDEX = 9;
 
 function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     /*
@@ -51,7 +44,7 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     /*
      * int index of where in the TileRow it is a member
      */
-    this.tileRowIndex = undefined;
+    this.tileColIndex = undefined;
     this.x = x;
     this.y = y;
     
@@ -123,17 +116,14 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
         this.group = group;
     };    
     
-    this.transitionTo = function(/*int*/ x, /*int*/ y) {
+    this.transitionTo = function(/*int*/ x, /*int*/ y, /*function*/ callback) {
         console.log('Tile.transition to x = ' + x + ' y = ' + y);
-        var thiz = this;
         this.group.transitionTo({
             x: x,
             y: y,
             duration: 0.5,
             easing: 'ease-out',
-            callback: function() {
-                console.log('Tile with value ' + thiz.value + ': x from ' + thiz.x + ' to ' + x + ', y from ' + thiz.y + ' to ' + y);
-            }
+            callback: callback
           });
         this.x = x;
         this.y = y;
@@ -142,7 +132,7 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     
     this.destroy = function() {
         if (this.type === 'wall') {
-            this.tileRow.removeTile(this.tileRowIndex);            
+            this.tileRow.removeTile(this.tileColIndex);            
         }
         console.log('destroy group: ');
         console.log(this.group);
@@ -155,13 +145,13 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
         this.group.remove();
     };
     
-    this.moveToWall = function(/*int*/ tileRowIndex, /*int*/ x, /*int*/ y) {
+    this.moveToWall = function(/*int*/ tileColIndex, /*int*/ x, /*int*/ y) {
         /*
          * move this tile to the wall (must be current tile)
          */
         if (this.type === 'current') {
             this.type = 'wall';
-            this.tileRowIndex = tileRowIndex;
+            this.tileColIndex = tileColIndex;
             
             this.tileRow = new TileRow();
             console.log('tileRow created, about to push to Make10.tileRows who has length= ' + Make10.tileRows.length);
@@ -173,26 +163,26 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
             console.log('base and wallLayers redrawn');
             
             //TEMP for now always create a new TileRow
-            this.transitionTo(x, y);
+            this.transitionTo(x, y, null);
             console.log('tileRows after push length = ' + Make10.tileRows.length);
-            this.tileRow.addTile(tileRowIndex, this);
+            this.tileRow.addTile(tileColIndex, this);
             this.group.moveTo(Make10.wallLayer);
-            this.group.setListening(true);
-            console.log('moveToWall, group.getListening() = ' + this.group.getListening());
-            var thiz = this;
-            this.group.on('click touch', function() {
-                console.log('moveToWall.group.on tile click touch value = ' + thiz.value + ', ' + thiz.type);
-                if (thiz.type === 'wall') {
-                    if (Make10.currentTile.value + thiz.value === Make10.makeValue) {
-
-                        Make10.valueMade(thiz);
-                        
-                    } else {
-                        
-                        Make10.valueNotMade(thiz);
-                    }
-                }
-            });
+//            this.group.setListening(true);
+//            console.log('moveToWall, group.getListening() = ' + this.group.getListening());
+//            var thiz = this;
+//            this.group.on('click touch', function() {
+//                console.log('moveToWall.group.on tile click touch value = ' + thiz.value + ', ' + thiz.type);
+//                if (thiz.type === 'wall') {
+//                    if (Make10.currentTile.value + thiz.value === Make10.makeValue) {
+//
+//                        Make10.valueMade(thiz);
+//                        
+//                    } else {
+//                        
+//                        Make10.valueNotMade(thiz);
+//                    }
+//                }
+//            });
 //            console.log('about to draw WallLayer');
 //            Make10.wallLayer.draw();
 //            
@@ -202,7 +192,8 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     this.init();
 };
 
-function TileRow() {
+function TileRow(/*int*/ tileRowIndex) {
+    this.tileRowIndex = tileRowIndex;
     this.tiles = [];
     this.group = new Kinetic.Group();
     
@@ -217,7 +208,7 @@ function TileRow() {
         console.log('TileRow.addTile');
         this.tiles[index] = tile;
         tile.tileRow = this;
-        tile.tileRowIndex = index;
+        tile.tileColIndex = index;
         this.group.add(tile.group);
         console.log('TileRow.addTile end of addTile');
     };
@@ -227,8 +218,9 @@ function TileRow() {
     };
     
     this.transitionUp = function() {
+        this.tileRowIndex++;
         this.group.transitionTo({
-            y: -TILE_HEIGHT,
+            y: -TILE_HEIGHT * this.tileRowIndex,
             duration: 0.5
         });
     };
@@ -332,7 +324,7 @@ var Make10 = {
          * Add row of tiles for the wall inserting into the beginning of the array
          */
         var y = STAGE_HEIGHT - TILE_HEIGHT;
-        var tileRow = new TileRow();
+        var tileRow = new TileRow(0);
         Make10.wallLayer.add(tileRow.group);
         
         for (var i = 0; i < Make10.makeValue; i++) {
@@ -393,7 +385,7 @@ var Make10 = {
          */
         Make10.currentTile = Make10.nextTile;       
         Make10.currentTile.type = 'current';
-        Make10.currentTile.transitionTo(STAGE_WIDTH / 2 - TILE_WIDTH / 2, 0);
+        Make10.currentTile.transitionTo(STAGE_WIDTH / 2 - TILE_WIDTH / 2, 0, false);
         Make10.createNext();
     },
     
@@ -405,13 +397,16 @@ var Make10 = {
          * Remove the current tile from the baseLayer,
          * Create a new current tile
          */
-        wallTile.destroy();                    
-        Make10.wallLayer.draw();
-        
-        Make10.currentTile.destroy();
-        Make10.baseLayer.draw();
-        
-        Make10.createCurrent();      
+        Make10.currentTile.transitionTo(wallTile.x, wallTile.y - TILE_HEIGHT * wallTile.tileRow.tileRowIndex, function() {
+            wallTile.destroy();                    
+            Make10.wallLayer.draw();
+            
+            Make10.currentTile.destroy();
+            Make10.baseLayer.draw();
+            
+            Make10.createCurrent();      
+            
+        });
     },
     
     valueNotMade: function(/*Tile*/ wallTile) {
@@ -424,9 +419,9 @@ var Make10 = {
         /*
          * What row and column got touched?
          */
-        var col = wallTile.tileRowIndex;
+        var col = wallTile.tileColIndex;
         console.log('col = ' + col);
-        Make10.currentTile.moveToWall(col, TILE_WIDTH * col, TILE_HEIGHT * 2); //TODO y value
+        Make10.currentTile.moveToWall(col, TILE_WIDTH * col, TILE_HEIGHT * (MAX_WALL_INDEX - wallTile.tileRow.tileRowIndex - 1)); 
         console.log('about to create another current');
         Make10.createCurrent();
         console.log('created another current');
