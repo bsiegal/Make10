@@ -9,8 +9,36 @@ html {
 }
 
 #game {
-    background-color: darkblue;
+    background-color: steelblue;
     border: 8px solid brown;
+}
+
+#play {
+    background-color: rgba(250,231,85,0.5);
+    font-weight: bold;
+    font-size: 40px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+    width: 100%;
+}
+
+#gameover {
+    background-color: rgba(250,25,250,0.5);
+    font-weight: bold;
+    font-size: 28px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+    width: 100%;
+}
+
+#play > div, #score {
+    text-align: center;
+    margin-top: 200px;
+    cursor: pointer;
 }
 
 #title {

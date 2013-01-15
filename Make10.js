@@ -16,13 +16,14 @@
  *
  ******************************************************************************/
 
-var TILE_WIDTH = 44;
-var TILE_HEIGHT = 60;
-
-var STAGE_WIDTH = 440;
-var STAGE_HEIGHT = 600;
-
-var MAX_WALL_INDEX = 9;
+var Constants = {
+    TILE_WIDTH: 44,
+    TILE_HEIGHT: 60,
+    MAX_COLS: 8,
+    MAX_ROWS: 8,
+    STAGE_WIDTH: 44 * 8/*Constants.TILE_WIDTH * Constants.MAX_COLS*/,
+    STAGE_HEIGHT: 60 * 8/*Constants.TILE_HEIGHT * Constants.MAX_ROWS*/
+};
 
 function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     /*
@@ -63,8 +64,8 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
         var tile = new Kinetic.Rect({
             x: this.x,
             y: this.y,
-            width: TILE_WIDTH,
-            height: TILE_HEIGHT,
+            width: Constants.TILE_WIDTH,
+            height: Constants.TILE_HEIGHT,
             name: 'tile',
             fill: 'white',
             stroke: 'black',
@@ -77,8 +78,8 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
          */
         var label = '' + this.value;
         var text = new Kinetic.Text({
-            x: this.x + TILE_WIDTH / 2 - 5,
-            y: this.y + TILE_HEIGHT / 2 - 5,
+            x: this.x + Constants.TILE_WIDTH / 2 - 5,
+            y: this.y + Constants.TILE_HEIGHT / 2 - 5,
             name: 'text',
             stroke: 'black',
 //            strokeWidth: 2,
@@ -220,7 +221,7 @@ function TileRow(/*int*/ tileRowIndex) {
     this.transitionUp = function() {
         this.tileRowIndex++;
         this.group.transitionTo({
-            y: -TILE_HEIGHT * this.tileRowIndex,
+            y: -Constants.TILE_HEIGHT * this.tileRowIndex,
             duration: 0.5
         });
     };
@@ -256,19 +257,19 @@ var Make10 = {
     /* the interval variable for repeatedly adding wall rows*/
     addWallTimer: undefined,
     /* time in ms for the addWallTimer */
-    addWallTime: 10000,
+    addWallTime: 8000,
     /* map of file name to Image */
     images: {},
     /* int score */
     score: 0,
     
     init: function() {
-        Make10.stage = new Kinetic.Stage({container: 'game', width: STAGE_WIDTH, height: STAGE_HEIGHT});
+        Make10.stage = new Kinetic.Stage({container: 'game', width: Constants.STAGE_WIDTH, height: Constants.STAGE_HEIGHT});
         /*
          * make the stage container the same size as the stage
          */
-        $('#game').css('height', STAGE_HEIGHT + 'px').css('width', STAGE_WIDTH + 'px');
-        $('#container').css('width', STAGE_WIDTH + 'px');
+        $('#game').css('height', Constants.STAGE_HEIGHT + 'px').css('width', Constants.STAGE_WIDTH + 'px');
+        $('#container').css('width', Constants.STAGE_WIDTH + 'px');
         //Make10.loadImages();
         Make10.initLayers();       
     },    
@@ -315,9 +316,6 @@ var Make10 = {
         Make10.createNext();
         Make10.createCurrent();
 
-        Make10.addWallTimer = setInterval(function() {
-            Make10.addWallRow();            
-        }, Make10.addWallTime);
     },
 
     genRandom: function() {
@@ -341,13 +339,13 @@ var Make10 = {
         /*
          * Add row of tiles for the wall inserting into the beginning of the array
          */
-        var y = STAGE_HEIGHT - TILE_HEIGHT;
+        var y = Constants.STAGE_HEIGHT - Constants.TILE_HEIGHT;
         var tileRow = new TileRow(0);
         Make10.wallLayer.add(tileRow.group);
         
         for (var i = 0; i < Make10.makeValue; i++) {
             var val = Make10.genRandom();
-            var x = i * TILE_WIDTH;
+            var x = i * Constants.TILE_WIDTH;
             var tile = new Tile(val, x, y, 'wall'); 
             tileRow.addTile(i, tile);
         }
@@ -361,9 +359,8 @@ var Make10 = {
          * Cancel repeating timer if length is maxed
          */
         Make10.consoleLog('Make10.addWallTimer = ' + Make10.addWallTimer);
-        if (Make10.tileRows.length > MAX_WALL_INDEX) {
-            clearInterval(Make10.addWallTimer);
-            alert('Game Over.  Your score: ' + Make10.score);
+        if (Make10.tileRows.length > Constants.MAX_ROWS - 1) {
+            Make10.endGame();
         }
 
     },
@@ -412,7 +409,7 @@ var Make10 = {
          */
         Make10.currentTile = Make10.nextTile;       
         Make10.currentTile.type = 'current';
-        Make10.currentTile.transitionTo(STAGE_WIDTH / 2 - TILE_WIDTH / 2, 0, false);
+        Make10.currentTile.transitionTo(Constants.STAGE_WIDTH / 2 - Constants.TILE_WIDTH / 2, 0, false);
         Make10.createNext();
     },
     
@@ -425,7 +422,7 @@ var Make10 = {
          * Add to score,
          * Create a new current tile
          */
-        Make10.currentTile.transitionTo(wallTile.x, wallTile.y - TILE_HEIGHT * wallTile.tileRow.tileRowIndex, function() {
+        Make10.currentTile.transitionTo(wallTile.x, wallTile.y - Constants.TILE_HEIGHT * wallTile.tileRow.tileRowIndex, function() {
             var tileRow = wallTile.tileRow;
             wallTile.destroy();                    
             Make10.wallLayer.draw();
@@ -457,7 +454,7 @@ var Make10 = {
 //         */
 //        var col = wallTile.tileColIndex;
 //        Make10.consoleLog('col = ' + col);
-//        Make10.currentTile.moveToWall(col, TILE_WIDTH * col, TILE_HEIGHT * (MAX_WALL_INDEX - wallTile.tileRow.tileRowIndex - 1));
+//        Make10.currentTile.moveToWall(col, Constants.TILE_WIDTH * col, Constants.TILE_HEIGHT * (Constants.MAX_ROWS - 1 - wallTile.tileRow.tileRowIndex - 1));
         
         //FOR now just destroy it
         Make10.currentTile.destroy();
@@ -467,6 +464,25 @@ var Make10 = {
         Make10.consoleLog('created another current');
 
     },  
+    
+    endGame: function() {
+        clearInterval(Make10.addWallTimer);
+        var html = 'Game Over';
+        if (localStorage.MAKE10_HI_SCORE) {
+            var localHi = parseInt(localStorage.MAKE10_HI_SCORE);
+            if (Make10.score > localHi) {
+                html += '<br/><br/>Congratulations!<br/><br/>New high score: ' + Make10.score;
+                localStorage.MAKE10_HI_SCORE = Make10.score;
+            } else {
+                html += '<br/><br/>Your score: ' + Make10.score + '<br/><br/>High score:' + localHi;
+            }
+        } else {
+            html += '<br/><br/>Congratulations! You have the new high score: ' + Make10.score;
+            localStorage.MAKE10_HI_SCORE = Make10.score;
+        }
+        $('#score').html(html);
+        $('#gameover').fadeIn();    
+    },
     
     about: function(show) {
         if (show) {
@@ -503,4 +519,19 @@ $(function() {
     
     
     Make10.init();
+
+    var play = $('#play');
+    
+    play.click(function() {
+        Make10.consoleLog('play clicked');
+        Make10.addWallTimer = setInterval(function() {
+            Make10.addWallRow();            
+        }, Make10.addWallTime);
+        
+        play.hide();
+    });
+
+    $('#gameover').click(function() {
+        document.location.reload(true);
+    });
 });
