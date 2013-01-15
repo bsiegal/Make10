@@ -239,7 +239,7 @@ function TileRow(/*int*/ tileRowIndex) {
 }
 
 var Make10 = {
-    debug: true,
+    debug: false,
     /* int - the number to add to */
     makeValue: 10,
     /* Kinetic.Stage - the stage */
