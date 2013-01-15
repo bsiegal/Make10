@@ -563,7 +563,7 @@ var Make10 = {
                 html += '<br/><br/>Your score: ' + Make10.score + '<br/><br/>High score:' + localHi;
             }
         } else {
-            html += '<br/><br/>Congratulations!<br/><br/>You have the new high score: ' + Make10.score;
+            html += '<br/><br/>Congratulations!<br/><br/>New high score: ' + Make10.score;
             localStorage.MAKE10_HI_SCORE = Make10.score;
         }
         $('#score').html(html);
