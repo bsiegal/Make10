@@ -593,7 +593,9 @@ var Make10 = {
     
     about: function(show) {
         if (show) {
-            $('#about').slideDown();
+            $('#about').slideDown(400, function() {
+                $('#makeValue').focus();
+            });
         } else {
             $('#about').slideUp();
         }
@@ -642,7 +644,10 @@ $(function() {
     
     var makeValue = $('#makeValue');
     makeValue.change(function() {
-        var val = makeValue.val();
+        var val = makeValue.val();        
+        if (isNaN(parseInt(val)) || parseInt(val) < 5 || parseInt(val) > 100) {
+            val = 10;
+        }
         localStorage.MAKE10_MAKE_VALUE = val; 
         $('.makeValue').html(val);
         document.location.reload(true);
