@@ -115,3 +115,7 @@ a {
     text-decoration: none;
     font-style: italic;
 }
+
+#aboutClose {
+    cursor: pointer;
+}

@@ -618,7 +618,7 @@ var Make10 = {
 };
 
 $(function() {
-    $('html').click(function() {
+    $('#aboutClose').click(function() {
         if ($('#about').is(':visible')) {
             $('#about').slideUp();
         }
