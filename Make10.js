@@ -146,50 +146,50 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
         this.group.remove();
     };
     
-    this.moveToWall = function(/*int*/ tileColIndex, /*int*/ x, /*int*/ y) {
-        /*
-         * move this tile to the wall (must be current tile)
-         */
-        if (this.type === 'current') {
-            this.type = 'wall';
-            this.tileColIndex = tileColIndex;
-            
-            this.tileRow = new TileRow();
-            Make10.consoleLog('tileRow created, about to push to Make10.tileRows who has length= ' + Make10.tileRows.length);
-            Make10.tileRows.push(this.tileRow);    
-            
-            Make10.consoleLog('currentTile moved to wallLayer');
-            Make10.baseLayer.draw();
-            Make10.wallLayer.draw();
-            Make10.consoleLog('base and wallLayers redrawn');
-            
-            //TEMP for now always create a new TileRow
-            this.transitionTo(x, y, null);
-            Make10.consoleLog('tileRows after push length = ' + Make10.tileRows.length);
-            this.tileRow.addTile(tileColIndex, this);
-            this.group.moveTo(Make10.wallLayer);
-//            this.group.setListening(true);
-//            Make10.consoleLog('moveToWall, group.getListening() = ' + this.group.getListening());
-//            var thiz = this;
-//            this.group.on('click touch', function() {
-//                Make10.consoleLog('moveToWall.group.on tile click touch value = ' + thiz.value + ', ' + thiz.type);
-//                if (thiz.type === 'wall') {
-//                    if (Make10.currentTile.value + thiz.value === Make10.makeValue) {
-//
-//                        Make10.valueMade(thiz);
-//                        
-//                    } else {
-//                        
-//                        Make10.valueNotMade(thiz);
-//                    }
-//                }
-//            });
-//            Make10.consoleLog('about to draw WallLayer');
-//            Make10.wallLayer.draw();
+//    this.moveToWall = function(/*int*/ tileColIndex, /*int*/ x, /*int*/ y) {
+//        /*
+//         * move this tile to the wall (must be current tile)
+//         */
+//        if (this.type === 'current') {
+//            this.type = 'wall';
+//            this.tileColIndex = tileColIndex;
 //            
-        }
-  
-    };
+//            this.tileRow = new TileRow();
+//            Make10.consoleLog('tileRow created, about to push to Make10.tileRows who has length= ' + Make10.tileRows.length);
+//            Make10.tileRows.push(this.tileRow);    
+//            
+//            Make10.consoleLog('currentTile moved to wallLayer');
+//            Make10.baseLayer.draw();
+//            Make10.wallLayer.draw();
+//            Make10.consoleLog('base and wallLayers redrawn');
+//            
+//            //TEMP for now always create a new TileRow
+//            this.transitionTo(x, y, null);
+//            Make10.consoleLog('tileRows after push length = ' + Make10.tileRows.length);
+//            this.tileRow.addTile(tileColIndex, this);
+//            this.group.moveTo(Make10.wallLayer);
+////            this.group.setListening(true);
+////            Make10.consoleLog('moveToWall, group.getListening() = ' + this.group.getListening());
+////            var thiz = this;
+////            this.group.on('click touch', function() {
+////                Make10.consoleLog('moveToWall.group.on tile click touch value = ' + thiz.value + ', ' + thiz.type);
+////                if (thiz.type === 'wall') {
+////                    if (Make10.currentTile.value + thiz.value === Make10.makeValue) {
+////
+////                        Make10.valueMade(thiz);
+////                        
+////                    } else {
+////                        
+////                        Make10.valueNotMade(thiz);
+////                    }
+////                }
+////            });
+////            Make10.consoleLog('about to draw WallLayer');
+////            Make10.wallLayer.draw();
+////            
+//        }
+//  
+//    };
     this.init();
 };
 
@@ -200,7 +200,7 @@ function TileRow(/*int*/ tileRowIndex) {
     
     this.init = function() {
         Make10.consoleLog('TileRow.init');
-        for (var i = 0; i < Make10.makeValue; i++) {
+        for (var i = 0; i < Constants.MAX_COLS; i++) {
             this.tiles[i] = false; //initialize to have all 'false' values
         }
     };
@@ -227,8 +227,10 @@ function TileRow(/*int*/ tileRowIndex) {
     };
     
     this.isEmpty = function() {
-        for (var i = 0; i < Make10.makeValue; i++) {
+        Make10.consoleLog('TileRow isEmpty');
+        for (var i = 0; i < Constants.MAX_COLS; i++) {
             if (this.tiles[i]) {
+                Make10.consoleLog('TileRow isEmpty no because of i = ' + i + ' has Tile:' + this.tiles[i]);
                 return false;
             }
         }
@@ -348,7 +350,7 @@ var Make10 = {
         var tileRow = new TileRow(0);
         Make10.wallLayer.add(tileRow.group);
         
-        for (var i = 0; i < Make10.makeValue; i++) {
+        for (var i = 0; i < Constants.MAX_COLS; i++) {
             var val = Make10.genRandom();
             var x = i * Constants.TILE_WIDTH;
             var tile = new Tile(val, x, y, 'wall'); 
@@ -383,7 +385,7 @@ var Make10 = {
         
         for (var i = Make10.tileRows.length - 1; i >= 0; i--) {
             var tileRowGroup = Make10.tileRows[i];
-            for (var j = 0; j < Make10.makeValue; j++) {
+            for (var j = 0; j < Constants.MAX_COLS; j++) {
                 if (tileRowGroup.tiles[j]) {
                     possibles.push(tileRowGroup.tiles[j].value);
                     Make10.consoleLog('createNext, possibles pushed ' + tileRowGroup.tiles[j].value);     
@@ -490,6 +492,7 @@ var Make10 = {
             var tileRow = wallTile.tileRow;
             wallTile.destroy();                    
             Make10.wallLayer.draw();
+            Make10.consoleLog('valueMade, tileRow isEmpty? ' + tileRow.isEmpty());
             if (tileRow.isEmpty()) {
                 Make10.consoleLog('valueMade, tileRow is now empty');
                 Make10.tileRows.splice(tileRow.tileRowIndex, 1);
