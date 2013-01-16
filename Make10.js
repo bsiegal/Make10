@@ -51,7 +51,7 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     this.y = y;
     
     this.init = function() {
-        console.log('Tile.init value = ' + this.value);
+        Make10.consoleLog('Tile.init value = ' + this.value);
         /*
          * For now just drawing a rectangle with a number value
          * (eventually use dots and Chinese character mahjong tile images?)
@@ -102,7 +102,7 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
          */
         var thiz = this;
         group.on('click tap', function() {
-            console.log('tile click tap value = ' + thiz.value + ', ' + thiz.type);
+            Make10.consoleLog('tile click tap value = ' + thiz.value + ', ' + thiz.type);
             if (thiz.type === 'wall') {
                 if (Make10.currentTile.value + thiz.value === Make10.makeValue) {
 
@@ -119,7 +119,7 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     };    
     
     this.transitionTo = function(/*int*/ x, /*int*/ y, /*function*/ callback) {
-        console.log('Tile.transition to x = ' + x + ' y = ' + y);
+        Make10.consoleLog('Tile.transition to x = ' + x + ' y = ' + y);
         this.group.transitionTo({
             x: x,
             y: y,
@@ -133,8 +133,8 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     };
     
     this.destroy = function() {
-        console.log('destroy group: ');
-        console.log(this.group);
+        Make10.consoleLog('destroy group: ');
+        Make10.consoleLog(this.group);
         // this is not a method on destroy this.group.destroy();
         /*
          * Destroy all children and remove group
@@ -151,7 +151,7 @@ function TileWall() {
     this.tiles = [];
     
     this.init = function() {
-        console.log('TileRow.init');
+        Make10.consoleLog('TileRow.init');
         /*
          * Creating 2 dimensional array of tiles
          * with all initial values of false
@@ -165,7 +165,7 @@ function TileWall() {
     };
     
     this.addTile = function(/*int*/ row, /*int*/ col, /*Tile*/ tile) {
-        console.log('TileWall.setTile');
+        Make10.consoleLog('TileWall.setTile');
         this.tiles[row][col] = tile;
         tile.row = row;
         tile.col = col;
@@ -174,10 +174,29 @@ function TileWall() {
     this.removeTile = function(/*int*/ row, /*int*/ col) {
         this.tiles[row][col].destroy();
         this.tiles[row][col] = false;        
+        
+        /*
+         * Move all the ones above in same col down one row
+         */
+        for (var i = row + 1; i < Constants.MAX_ROWS; i++) {
+            var tile = this.tiles[i][col]; 
+            if (tile) {
+                tile.row--;
+                this.tiles[tile.row][col] = tile;                
+                tile.group.transitionTo({
+                  y: -Constants.TILE_HEIGHT * tile.row,
+                  duration: 0.3
+                });
+                /*
+                 * The original row,col should be nullified
+                 */
+                this.tiles[i][col] = false;
+            }
+        }
     };
     
     this.transitionUp = function() {
-        console.log('TileWall transitionUp');
+        Make10.consoleLog('TileWall transitionUp');
         /*
          * create a new row of false cols and unshift it
          */
@@ -186,20 +205,20 @@ function TileWall() {
             newRow.push(false);
         }
         this.tiles.unshift(newRow);
-        console.log('after unshift length = ' + this.tiles.length);
+        Make10.consoleLog('after unshift length = ' + this.tiles.length);
         /*
          * If row length exceeds max, splice off
          */
         if (this.tiles.length > Constants.MAX_ROWS) {
             this.tiles.splice(Constants.MAX_ROWS, this.tiles.length - Constants.MAX_ROWS);
         }
-        console.log('after splice length = ' + this.tiles.length);
+        Make10.consoleLog('after splice length = ' + this.tiles.length);
         for (var i = 0; i < Constants.MAX_ROWS; i++) {
             for (var j = 0; j < Constants.MAX_COLS; j++) {
                 var tile = this.tiles[i][j];
                 if (tile) {
                     tile.row++;
-                    console.log('changed row to ' + tile.row + ' for i=' + i);
+                    Make10.consoleLog('changed row to ' + tile.row + ' for i=' + i);
                     tile.group.transitionTo({
                       y: -Constants.TILE_HEIGHT * i,
                       duration: 0.3
@@ -216,11 +235,11 @@ function TileWall() {
                 /*
                  * At least one element in top row is a Tile, so reached max
                  */
-                console.log('isMax true b/c of j=' + j);
+                Make10.consoleLog('isMax true b/c of j=' + j);
                 return true;
             }
         }
-        console.log('isMax false');
+        Make10.consoleLog('isMax false');
         return false;
     };
     
@@ -230,7 +249,7 @@ function TileWall() {
             for (var j = 0; j < Constants.MAX_COLS; j++) {
                 if (this.tiles[i][j]) {
                     possibles.push(this.tiles[i][j].value);
-                    console.log('possibles pushed ' + this.tiles[i][j].value);     
+                    Make10.consoleLog('possibles pushed ' + this.tiles[i][j].value);     
                     if (possibles.length > Constants.MAX_COLS * 2) {
                         return possibles;
                     }
@@ -241,10 +260,10 @@ function TileWall() {
     };
     
     this.isEmpty = function() {
-        console.log('TileRow isEmpty');
+        Make10.consoleLog('TileRow isEmpty');
         for (var i = 0; i < Constants.MAX_COLS; i++) {
             if (this.tiles[i]) {
-                console.log('TileRow isEmpty no because of i = ' + i + ' has Tile:' + this.tiles[i]);
+                Make10.consoleLog('TileRow isEmpty no because of i = ' + i + ' has Tile:' + this.tiles[i]);
                 return false;
             }
         }
@@ -257,7 +276,7 @@ function TileWall() {
 
 
 var Make10 = {
-    debug: true,
+    debug: false,
     /* int - the number to add to */
     makeValue: undefined,
     /* Kinetic.Stage - the stage */
@@ -304,7 +323,7 @@ var Make10 = {
     },    
         
     loadImages: function() {
-        console.log('loadImages');
+        Make10.consoleLog('loadImages');
         Make10.loadedImages = 0;
         for (var i = 1; i <= 9 ; i++) {
             var src = 'MJt' + i;
@@ -320,7 +339,7 @@ var Make10 = {
     },
        
     initLayers: function() {
-        console.log('initLayers');
+        Make10.consoleLog('initLayers');
         /*
          * Create the layer for the tiles in the wall.  This will listen
          * because touching tiles in the wall is how to move.
@@ -358,7 +377,7 @@ var Make10 = {
     },
     
     addWallRow: function() {
-        console.log('addWallRow');
+        Make10.consoleLog('addWallRow');
         
         Make10.tileWall.transitionUp();
         /*
@@ -375,12 +394,12 @@ var Make10 = {
         }
         
         Make10.wallLayer.draw();
-        console.log('initWallLayer wallLayer drawn');
+        Make10.consoleLog('initWallLayer wallLayer drawn');
         
         /*
          * Cancel repeating timer if wall is maxed
          */
-        console.log('Make10.addWallTimer = ' + Make10.addWallTimer);
+        Make10.consoleLog('Make10.addWallTimer = ' + Make10.addWallTimer);
         if (Make10.addWallTimer && Make10.tileWall.isMax()) {
             Make10.endGame();
         }
@@ -388,7 +407,7 @@ var Make10 = {
     },
     
     createNext: function() {
-        console.log('createNext');
+        Make10.consoleLog('createNext');
         /*
          * To generate a value that must make a match with at
          * least one tile somewhere in the wall, list out all the values
@@ -416,7 +435,7 @@ var Make10 = {
     },
     
     createCurrent: function() {
-        console.log('createCurrent');
+        Make10.consoleLog('createCurrent');
         /*
          * Take the next tile
          * and move it to the current position
@@ -480,7 +499,7 @@ var Make10 = {
     },
     
     valueMade: function(/*Tile*/ wallTile) {
-        console.log('valueMade: '+ Make10.currentTile.value + ' + ' + wallTile.value + ' = '+ Make10.makeValue + ' :)');
+        Make10.consoleLog('valueMade: '+ Make10.currentTile.value + ' + ' + wallTile.value + ' = '+ Make10.makeValue + ' :)');
         /*
          * It's a match!
          * Remove and destroy wallTile
@@ -491,11 +510,11 @@ var Make10 = {
         Make10.currentTile.transitionTo(wallTile.x, wallTile.y - Constants.TILE_HEIGHT * wallTile.row, function() {
             Make10.tileWall.removeTile(wallTile.row, wallTile.col);                    
             Make10.wallLayer.draw();
-            console.log('valueMade, wall tile removed, should bump all the others above it down now');
+            Make10.consoleLog('valueMade, wall tile removed, should bump all the others above it down now');
 //            if (tileRow.isEmpty()) {
-//                console.log('valueMade, tileRow is now empty');
+//                Make10.consoleLog('valueMade, tileRow is now empty');
 //                Make10.tileRows.splice(tileRow.tileRowIndex, 1);
-//                console.log('valueMade, tileRows was spliced so its length is now ' + Make10.tileRows.length);
+//                Make10.consoleLog('valueMade, tileRows was spliced so its length is now ' + Make10.tileRows.length);
 //            }
             
             Make10.currentTile.destroy();
@@ -512,7 +531,7 @@ var Make10 = {
     },
     
     valueNotMade: function(/*Tile*/ wallTile) {
-        console.log('valueNotMade: NO MATCH! '+ Make10.currentTile.value + ' + ' + wallTile.value + ' != '+ Make10.makeValue);
+        Make10.consoleLog('valueNotMade: NO MATCH! '+ Make10.currentTile.value + ' + ' + wallTile.value + ' != '+ Make10.makeValue);
         /*
          * It's not a match, so we must drop the tile on top of the one touched.
          * Or if there is an exposed side, then on top of the column on the exposed side.
@@ -522,16 +541,16 @@ var Make10 = {
 //         * What row and column got touched?
 //         */
 //        var col = wallTile.tileColIndex;
-//        console.log('col = ' + col);
+//        Make10.consoleLog('col = ' + col);
 //        Make10.currentTile.moveToWall(col, Constants.TILE_WIDTH * col, Constants.TILE_HEIGHT * (Constants.MAX_ROWS - 1 - wallTile.tileRow.tileRowIndex - 1));
         
         //FOR now just destroy it
         Make10.showPlus(0);
         Make10.currentTile.destroy();
         Make10.baseLayer.draw();
-        console.log('about to create another current');
+        Make10.consoleLog('about to create another current');
         Make10.createCurrent();      
-        console.log('created another current');
+        Make10.consoleLog('created another current');
 
     },  
     
@@ -609,7 +628,7 @@ $(function() {
     Make10.init();
 
     $('#play').click(function() {
-        console.log('play clicked');
+        Make10.consoleLog('play clicked');
         Make10.addWallTimer = setInterval(function() {
             Make10.addWallRow();            
         }, Make10.addWallTime);
