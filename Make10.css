@@ -22,7 +22,7 @@ html {
 }
 
 #start {
-    background-color: rgba(250,231,85,0.5);
+    background-color: rgba(107,250,102,0.5);
     font-weight: bold;
     font-size: 40px;
 }
@@ -37,6 +37,15 @@ html {
     text-align: center;
     margin-top: 200px;
     cursor: pointer;
+}
+
+#play {
+    padding: 10px;
+    border: 1px solid gray;
+    width: 100px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 10px;
 }
 
 #title {
@@ -58,10 +67,10 @@ html {
 }
 
 
-.rightMenu {
-    position: absolute;
-    right: 0px;
-    top: 0px;
+.about, .settings {
+    text-align: center;
+    font-size: 20px;
+    margin-top: 20px;
 }
 
 #title .rightMenu {
@@ -83,6 +92,10 @@ html {
     padding: 10px;
     /*width: 500px;*/
     text-align: left;
+}
+
+#makeValue {
+    font-size: 36px;
 }
 
 h1 {  

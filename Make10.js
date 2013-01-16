@@ -243,7 +243,7 @@ function TileRow(/*int*/ tileRowIndex) {
 var Make10 = {
     debug: false,
     /* int - the number to add to */
-    makeValue: 10,
+    makeValue: undefined,
     /* Kinetic.Stage - the stage */
     stage: null,
     /* Kinetic.Layer for wall */
@@ -270,6 +270,13 @@ var Make10 = {
     plus0: null,
     
     init: function() {
+        if (localStorage.MAKE10_MAKE_VALUE) {
+            Make10.makeValue = parseInt(localStorage.MAKE10_MAKE_VALUE);
+            $('.makeValue').html(localStorage.MAKE10_MAKE_VALUE);
+            $('#makeValue').val(localStorage.MAKE10_MAKE_VALUE);
+        } else {
+            Make10.makeValue = 10;
+        }
         Make10.stage = new Kinetic.Stage({container: 'game', width: Constants.STAGE_WIDTH, height: Constants.STAGE_HEIGHT});
         /*
          * make the stage container the same size as the stage
@@ -570,7 +577,7 @@ var Make10 = {
             localStorage.MAKE10_HI_SCORE = Make10.score;
         }
         $('#score').html(html);
-        $('#gameover').fadeIn();    
+        $('#gameover').fadeIn(1000);    
     },
     
     about: function(show) {
@@ -609,19 +616,24 @@ $(function() {
     
     Make10.init();
 
-    var play = $('#start');
-    
-    play.click(function() {
+    $('#play').click(function() {
         Make10.consoleLog('play clicked');
         Make10.addWallTimer = setInterval(function() {
             Make10.addWallRow();            
         }, Make10.addWallTime);
         
-        play.hide();
+        $('#start').hide();
     });
 
-    $('#gameover').click(function() {
+    $('#score').click(function() {
         document.location.reload(true);
     });
-        
+    
+    var makeValue = $('#makeValue');
+    makeValue.change(function() {
+        var val = makeValue.val();
+        localStorage.MAKE10_MAKE_VALUE = val; 
+        $('.makeValue').html(val);
+        document.location.reload(true);
+    });    
 });

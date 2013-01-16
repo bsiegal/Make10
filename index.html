@@ -33,18 +33,17 @@
 <body>
     <div id="container">
         <div id="title">
-            <span class="title">Make 10</span>
-            <span class="rightMenu"><a href="javascript:Make10.toggleAbout()">About</a></span>
+            <span class="title">Make <span class="makeValue">10</span></span>
             <div id="about" style="display: none">
                 <a href="https://github.com/bsiegal/Make10"><img style="position: absolute; top: 0; left: 0; border: 0;" src="forkme_left_red_aa0000.png" alt="Fork me on GitHub"></a>
                 <div class="title">
-                    <h1>Make 10</h1>
-                    An addition game for improving mental math skills for kids - by <a href="http://bsiegal.github.com/">Bess Siegal</a>
+                    <h1>Make <select id="makeValue"><option>5</option><option selected="true">10</option><option>60</option><option>100</option></select></h1>
+                    An addition game for kids to improve mental math skills - by <a href="http://bsiegal.github.com/">Bess Siegal</a>
                 </div>
                 <h2>How to play</h2>
                 <ul>
-                    <li>Try to 'Make 10' as many times as you can before the wall of tiles reaches the top.</li>
-                    <li>Break the wall by clicking/touching the tile that will make 10 with your current tile.</li>                    
+                    <li>Try to 'Make <span class="makeValue">10</span>' as many times as you can before the wall of tiles reaches the top.</li>
+                    <li>Break the wall by clicking/touching the tile that will make <span class="makeValue">10</span> with your current tile.</li>                    
                 </ul>
                 <h2>Source</h2>
                 <ul>
@@ -54,13 +53,12 @@
                 </ul>
             </div>            
         </div>        
-        <div id="instruct" style="display:none">
-            Make <select id="makeValue"><option>10</option><option>5</option><option>60</option><option>1</option></select></span>!
-            Select speed
-        </div>
     </div>
     <div id="game"></div>
-    <div id="start" class="overlay"><div id="play">Play</div></div>
+    <div id="start" class="overlay">
+        <div id="play">Play</div>
+        <div class="about"><a href="javascript:Make10.toggleAbout()">About/Settings</a></div>
+    </div>
     <div id="gameover" class="overlay" style="display:none"><div id="score"></div></div>
 </body>
 </html>
