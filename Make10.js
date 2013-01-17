@@ -205,20 +205,19 @@ function TileWall() {
             newRow.push(false);
         }
         this.tiles.unshift(newRow);
-        Make10.consoleLog('after unshift length = ' + this.tiles.length);
+        
         /*
          * If row length exceeds max, splice off
          */
         if (this.tiles.length > Constants.MAX_ROWS) {
             this.tiles.splice(Constants.MAX_ROWS, this.tiles.length - Constants.MAX_ROWS);
         }
-        Make10.consoleLog('after splice length = ' + this.tiles.length);
+
         for (var i = 0; i < Constants.MAX_ROWS; i++) {
             for (var j = 0; j < Constants.MAX_COLS; j++) {
                 var tile = this.tiles[i][j];
                 if (tile) {
                     tile.row++;
-                    Make10.consoleLog('changed row to ' + tile.row + ' for i=' + i);
                     tile.group.transitionTo({
                       y: -Constants.TILE_HEIGHT * i,
                       duration: 0.3
@@ -235,11 +234,9 @@ function TileWall() {
                 /*
                  * At least one element in top row is a Tile, so reached max
                  */
-                Make10.consoleLog('isMax true b/c of j=' + j);
                 return true;
             }
         }
-        Make10.consoleLog('isMax false');
         return false;
     };
     
@@ -249,7 +246,6 @@ function TileWall() {
             for (var j = 0; j < Constants.MAX_COLS; j++) {
                 if (this.tiles[i][j]) {
                     possibles.push(this.tiles[i][j].value);
-                    Make10.consoleLog('possibles pushed ' + this.tiles[i][j].value);     
                     if (possibles.length > Constants.MAX_COLS * 2) {
                         return possibles;
                     }
@@ -257,17 +253,6 @@ function TileWall() {
             }
         }  
         return possibles;
-    };
-    
-    this.isEmpty = function() {
-        Make10.consoleLog('TileRow isEmpty');
-        for (var i = 0; i < Constants.MAX_COLS; i++) {
-            if (this.tiles[i]) {
-                Make10.consoleLog('TileRow isEmpty no because of i = ' + i + ' has Tile:' + this.tiles[i]);
-                return false;
-            }
-        }
-        return true;
     };
     
     this.init();
@@ -383,12 +368,10 @@ var Make10 = {
         /*
          * Add row of tiles for the wall inserting into the beginning of the array
          */
-        var y = Constants.STAGE_HEIGHT - Constants.TILE_HEIGHT;
-        
         for (var j = 0; j < Constants.MAX_COLS; j++) {
             var val = Make10.genRandom();
             var x = j * Constants.TILE_WIDTH;
-            var tile = new Tile(val, x, y, 'wall'); 
+            var tile = new Tile(val, x, Constants.STAGE_HEIGHT, 'wall'); 
             Make10.wallLayer.add(tile.group);
             Make10.tileWall.addTile(0, j, tile);
         }
@@ -399,7 +382,6 @@ var Make10 = {
         /*
          * Cancel repeating timer if wall is maxed
          */
-        Make10.consoleLog('Make10.addWallTimer = ' + Make10.addWallTimer);
         if (Make10.addWallTimer && Make10.tileWall.isMax()) {
             Make10.endGame();
         }
@@ -510,12 +492,6 @@ var Make10 = {
         Make10.currentTile.transitionTo(wallTile.x, wallTile.y - Constants.TILE_HEIGHT * wallTile.row, function() {
             Make10.tileWall.removeTile(wallTile.row, wallTile.col);                    
             Make10.wallLayer.draw();
-            Make10.consoleLog('valueMade, wall tile removed, should bump all the others above it down now');
-//            if (tileRow.isEmpty()) {
-//                Make10.consoleLog('valueMade, tileRow is now empty');
-//                Make10.tileRows.splice(tileRow.tileRowIndex, 1);
-//                Make10.consoleLog('valueMade, tileRows was spliced so its length is now ' + Make10.tileRows.length);
-//            }
             
             Make10.currentTile.destroy();
             
@@ -536,13 +512,6 @@ var Make10 = {
          * It's not a match, so we must drop the tile on top of the one touched.
          * Or if there is an exposed side, then on top of the column on the exposed side.
          */
-//        //TEMP for now just drop on top only
-//        /*
-//         * What row and column got touched?
-//         */
-//        var col = wallTile.tileColIndex;
-//        Make10.consoleLog('col = ' + col);
-//        Make10.currentTile.moveToWall(col, Constants.TILE_WIDTH * col, Constants.TILE_HEIGHT * (Constants.MAX_ROWS - 1 - wallTile.tileRow.tileRowIndex - 1));
         
         //FOR now just destroy it
         Make10.showPlus(0);
@@ -589,6 +558,20 @@ var Make10 = {
         }
         $('#score').html(html);
         $('#gameover').fadeIn(1000);    
+    },
+    
+    setMakeValue: function(reload) {
+        var val = $('#makeValue').val();
+        var num = parseInt(val);
+        if (isNaN(num) || num < 5 || num > 100) {
+            val = '10';
+        }
+        localStorage.MAKE10_MAKE_VALUE = val; 
+        $('.makeValue').html(val);
+        
+        if (reload) {
+            document.location.reload(true);              
+        }
     },
     
     about: function(show) {
@@ -642,14 +625,10 @@ $(function() {
         document.location.reload(true);
     });
     
-    var makeValue = $('#makeValue');
-    makeValue.change(function() {
-        var val = makeValue.val();        
-        if (isNaN(parseInt(val)) || parseInt(val) < 5 || parseInt(val) > 100) {
-            val = 10;
-        }
-        localStorage.MAKE10_MAKE_VALUE = val; 
-        $('.makeValue').html(val);
-        document.location.reload(true);
-    });    
+    $('#makeValue').change(function() {
+        Make10.setMakeValue(true);
+    }).keyup(function() {
+        Make10.setMakeValue(false);
+    });
+    
 });
