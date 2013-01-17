@@ -574,6 +574,18 @@ var Make10 = {
         }
     },
     
+    pause: function() {
+        if (Make10.addWallTimer) {
+            clearInterval(Make10.addWallTimer);
+        }
+    },
+    
+    resume: function() {
+        Make10.addWallTimer = setInterval(function() {
+            Make10.addWallRow();            
+        }, Make10.addWallTime);        
+    },
+    
     about: function(show) {
         if (show) {
             $('#about').slideDown(400, function() {
@@ -605,20 +617,19 @@ $(function() {
         if ($('#about').is(':visible')) {
             $('#about').slideUp();
         }
-    });
-
-    $('html,body').animate({scrollTop: $('#title').offset().top}, 'fast');
-    
+    });   
     
     Make10.init();
 
     $('#play').click(function() {
-        Make10.consoleLog('play clicked');
-        Make10.addWallTimer = setInterval(function() {
-            Make10.addWallRow();            
-        }, Make10.addWallTime);
+        Make10.resume();
         
         $('#start').hide();
+    });
+    $('#resume').click(function() {
+        Make10.resume();
+        
+        $('#pause').hide();
     });
 
     $('#score').click(function() {
@@ -630,5 +641,11 @@ $(function() {
     }).keyup(function() {
         Make10.setMakeValue(false);
     });
-    
+
+    $(window).blur(function(){
+        if (Make10.addWallTimer) {
+            Make10.pause();
+            $('#pause').show();                    
+        }
+    });
 });
