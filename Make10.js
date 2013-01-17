@@ -263,7 +263,7 @@ function TileWall() {
 
 
 var Make10 = {
-    debug: true,
+    debug: false,
     /* int - the number to add to */
     makeValue: undefined,
     /* Kinetic.Stage - the stage */
@@ -597,7 +597,13 @@ var Make10 = {
             localStorage.MAKE10_HI_SCORE = Make10.score;
         }
         $('#score').html(html);
-        $('#gameover').fadeIn(1000);
+        $('#gameover').fadeIn(1000, function() {
+            setTimeout(function() {
+                $('#score').click(function() {
+                    document.location.reload(true);
+                });                
+            }, 1000);
+        });
         
         Make10.addWallTimer = undefined;
     },
@@ -672,10 +678,6 @@ $(function() {
         Make10.resume();
         
         $('#pause').hide();
-    });
-
-    $('#score').click(function() {
-        document.location.reload(true);
     });
     
     $('#makeValue').change(function() {
