@@ -364,7 +364,6 @@ var Make10 = {
     addWallRow: function() {
         Make10.consoleLog('addWallRow');
         
-        Make10.tileWall.transitionUp();
         /*
          * Add row of tiles for the wall inserting into the beginning of the array
          */
@@ -377,7 +376,8 @@ var Make10 = {
         }
         
         Make10.wallLayer.draw();
-        Make10.consoleLog('initWallLayer wallLayer drawn');
+
+        Make10.tileWall.transitionUp();
         
         /*
          * Cancel repeating timer if wall is maxed
