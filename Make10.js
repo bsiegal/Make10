@@ -47,10 +47,8 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
      */
     this.row = undefined;
     
-    this.x = x;
-    this.y = y;
     
-    this.init = function() {
+    this.init = function(x, y) {
         Make10.consoleLog('Tile.init value = ' + this.value);
         /*
          * For now just drawing a rectangle with a number value
@@ -63,8 +61,8 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
          * Draw the tile
          */
         var tile = new Kinetic.Rect({
-            x: this.x,
-            y: this.y,
+            x: x,
+            y: y,
             width: Constants.TILE_WIDTH,
             height: Constants.TILE_HEIGHT,
             name: 'tile',
@@ -79,8 +77,8 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
          */
         var label = '' + this.value;
         var text = new Kinetic.Text({
-            x: this.x + Constants.TILE_WIDTH / 2 - 5 * label.length,
-            y: this.y + Constants.TILE_HEIGHT / 2 - 5,
+            x: x + Constants.TILE_WIDTH / 2 - 5 * label.length,
+            y: y + Constants.TILE_HEIGHT / 2 - 5,
             name: 'text',
             stroke: 'black',
 //            strokeWidth: 2,
@@ -119,7 +117,6 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     };    
     
     this.transitionTo = function(/*int*/ x, /*int*/ y, /*function*/ callback) {
-        Make10.consoleLog('Tile.transition to x = ' + x + ' y = ' + y);
         this.group.transitionTo({
             x: x,
             y: y,
@@ -127,15 +124,13 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
             easing: 'ease-out',
             callback: callback
           });
-        this.x = x;
-        this.y = y;
 
     };
     
     this.destroy = function() {
         Make10.consoleLog('destroy group: ');
         Make10.consoleLog(this.group);
-        // this is not a method on destroy this.group.destroy();
+        // this is not a method on group this.group.destroy();
         /*
          * Destroy all children and remove group
          * TODO
@@ -144,7 +139,7 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
         this.group.remove();
     };
     
-    this.init();
+    this.init(x, y);
 };
 
 function TileWall() {
@@ -255,13 +250,20 @@ function TileWall() {
         return possibles;
     };
     
+    this.isEmpty = function(row, col) {
+        if (this.tiles[row][col]) {
+            return false;
+        }
+        return true;
+    };
+    
     this.init();
 }
 
 
 
 var Make10 = {
-    debug: false,
+    debug: true,
     /* int - the number to add to */
     makeValue: undefined,
     /* Kinetic.Stage - the stage */
@@ -464,6 +466,7 @@ var Make10 = {
             stroke: 'black',
             strokeWidth: 1
           });
+        oct.rotate(Math.PI / 8);
         p0.add(oct);
         var p0Txt = new Kinetic.Text({
             x: Constants.STAGE_WIDTH - 30,
@@ -489,7 +492,7 @@ var Make10 = {
          * Add to score,
          * Create a new current tile
          */
-        Make10.currentTile.transitionTo(wallTile.x, wallTile.y - Constants.TILE_HEIGHT * wallTile.row, function() {
+        Make10.currentTile.transitionTo(wallTile.col * Constants.TILE_WIDTH, Constants.STAGE_HEIGHT - Constants.TILE_HEIGHT * wallTile.row, function() {
             Make10.tileWall.removeTile(wallTile.row, wallTile.col);                    
             Make10.wallLayer.draw();
             
@@ -509,17 +512,54 @@ var Make10 = {
     valueNotMade: function(/*Tile*/ wallTile) {
         Make10.consoleLog('valueNotMade: NO MATCH! '+ Make10.currentTile.value + ' + ' + wallTile.value + ' != '+ Make10.makeValue);
         /*
-         * It's not a match, so we must drop the tile on top of the one touched.
-         * Or if there is an exposed side, then on top of the column on the exposed side.
+         * It's not a match, so we must drop the tile on top of the column of the tile touched.
          */
+        /*
+         * find the row it should be in, if it's the last row end the game
+         */
+        var foundEmptySpot = false;
         
-        //FOR now just destroy it
-        Make10.showPlus(0);
-        Make10.currentTile.destroy();
-        Make10.baseLayer.draw();
-        Make10.consoleLog('about to create another current');
-        Make10.createCurrent();      
-        Make10.consoleLog('created another current');
+        for (var i = wallTile.row + 1; i < Constants.MAX_ROWS; i++) {
+            Make10.consoleLog('i = ' + i);
+            if (Make10.tileWall.isEmpty(i, wallTile.col)) {
+                Make10.consoleLog('foundEmptySpot at i= ' + i);
+                foundEmptySpot = true;
+                /*
+                 * Transition the current tile to here
+                 */
+                var x = wallTile.col * Constants.TILE_WIDTH;
+                var y = Constants.STAGE_HEIGHT - Constants.TILE_HEIGHT * i;
+                
+                Make10.currentTile.transitionTo(x, y, function() {
+                    /*
+                     * Clone the current tile and add it to the wall at the y = STAGE_HEIGHT
+                     * (The reason it needs to go at that y is so when the TileWall transitionUp
+                     * is called it'll be where it needs to be) then move it
+                     */
+                    var tile = new Tile(Make10.currentTile.value, x, Constants.STAGE_HEIGHT, 'wall'); 
+                    Make10.wallLayer.add(tile.group);
+                    tile.group.setY(-Constants.TILE_HEIGHT * i);
+                    Make10.tileWall.addTile(i, wallTile.col, tile);
+                    Make10.wallLayer.draw();
+                    
+                    Make10.currentTile.destroy();                    
+                    Make10.showPlus(0);            
+                    Make10.baseLayer.draw();                    
+                    
+                    Make10.createCurrent();      
+                    
+                });
+                break;
+
+            }
+        }
+        /*
+         * If an empty spot was not found
+         */
+        if (!foundEmptySpot) {
+            Make10.endGame();
+            return;
+        }
 
     },  
     
@@ -557,7 +597,9 @@ var Make10 = {
             localStorage.MAKE10_HI_SCORE = Make10.score;
         }
         $('#score').html(html);
-        $('#gameover').fadeIn(1000);    
+        $('#gameover').fadeIn(1000);
+        
+        Make10.addWallTimer = undefined;
     },
     
     setMakeValue: function(reload) {
