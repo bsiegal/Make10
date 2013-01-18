@@ -22,7 +22,12 @@ var Constants = {
     MAX_COLS: 8,
     MAX_ROWS: 8,
     STAGE_WIDTH: 44 * 8/*Constants.TILE_WIDTH * Constants.MAX_COLS*/,
-    STAGE_HEIGHT: 60 * 8/*Constants.TILE_HEIGHT * Constants.MAX_ROWS*/
+    STAGE_HEIGHT: 60 * 8, /*Constants.TILE_HEIGHT * Constants.MAX_ROWS*/
+    /* int time in ms to increase speed (decrease time) */
+    TIME_DEC: 2000,
+    /* int point value to increase by with decrease in time */
+    POINT_INC: 10,
+    BONUS: 500
 };
 
 function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
@@ -236,6 +241,14 @@ function TileWall() {
     };
     
     this.getPossibles = function() {
+        /*
+         * To generate a value that must make a match with at
+         * least one tile somewhere in the wall, list out all the values
+         * in a single array then randomly generate an index then pull the value out
+         * of the Tile at that index. <-- That's actually a little too hard to make a row
+         * disappear, so let's stop after the equivalent of the first 2 rows
+         */
+
         var possibles = [];
         for (var i = Constants.MAX_ROWS - 1; i >= 0; i--) {
             for (var j = 0; j < Constants.MAX_COLS; j++) {
@@ -254,6 +267,17 @@ function TileWall() {
         if (this.tiles[row][col]) {
             return false;
         }
+        return true;
+    };
+
+    this.isAllEmpty = function() {
+        for (var i = 0; i < Constants.MAX_ROWS; i++) {
+            for (var j = 0; j < Constants.MAX_COLS; j++) {
+                if (this.tiles[i][j]) {
+                    return false;
+                }
+            }
+        }  
         return true;
     };
     
@@ -287,9 +311,13 @@ var Make10 = {
     /* int score */
     score: 0,
     /* Kinetic.Group in the baseLayer to show when you earn points */
-    plus10: null,
+    plusPoints: null,
     /* Kinetic.Group in the baseLayer to show when you don't earn points */
-    plus0: null,
+    noPoints: null,
+    /* int points to earn */
+    pointValue: 10,
+    /* the value to be over to earn bonus */ 
+    bonusThreshold: Constants.BONUS,
     
     init: function() {
         if (localStorage.MAKE10_MAKE_VALUE) {
@@ -392,19 +420,14 @@ var Make10 = {
     
     createNext: function() {
         Make10.consoleLog('createNext');
-        /*
-         * To generate a value that must make a match with at
-         * least one tile somewhere in the wall, list out all the values
-         * in a single array then randomly generate an index then pull the value out
-         * of the Tile at that index. <-- That's actually a little too hard to make a row
-         * disappear, so let's stop after the equivalent of the first 2 rows
-         */
         var possibles = Make10.tileWall.getPossibles();        
 
         var val;
-        if (possibles.length > 0) {
+        if (possibles.length > 1) {
             var randomIndex = Math.floor(Math.random() * (possibles.length - 1)) + 1;        
             val = Make10.makeValue - possibles[randomIndex];
+        } else if (possibles.length === 1) {
+            val = Make10.makeValue - possibles[0];
         } else {
             val = Make10.genRandom();
         }
@@ -449,12 +472,13 @@ var Make10 = {
             text: '+10',
             fontSize: 12,
             fontFamily: 'Calibri',
-            fill: 'black'
+            fill: 'black',
+            id: 'plusPointsText'
           });
         p10.add(p10Txt);
         p10.setVisible(false);
         Make10.baseLayer.add(p10);
-        Make10.plus10 = p10;
+        Make10.plusPoints = p10;
         
         var p0 = new Kinetic.Group();
         var oct = new Kinetic.RegularPolygon({
@@ -479,7 +503,7 @@ var Make10 = {
         p0.add(p0Txt);
         p0.setVisible(false);
         Make10.baseLayer.add(p0);
-        Make10.plus0 = p0;
+        Make10.noPoints = p0;
         Make10.baseLayer.draw();
     },
     
@@ -498,15 +522,40 @@ var Make10 = {
             
             Make10.currentTile.destroy();
             
-            Make10.showPlus(10);            
+            Make10.showGain(true);            
             Make10.baseLayer.draw();
+                        
+            Make10.score += Make10.pointValue;
             
+            /*
+             * If you clear the entire wall, earn bonus
+             */
+            if (Make10.tileWall.isAllEmpty()) {
+                Make10.score += Constants.BONUS;       
+                Make10.addWallRow();
+                Make10.addWallRow();
+                Make10.addWallRow();
+                Make10.receiveBonus();
+            }
             
-            Make10.score += 10;
+            if (Make10.score >= Make10.bonusThreshold) {
+                Make10.receiveBonus();
+                Make10.bonusThreshold += Constants.BONUS;
+            }
             
             Make10.createCurrent();      
             
         });
+    },
+    
+    receiveBonus: function() {
+        /*
+         * Every increase of bonusThreshold points, increase the pointValue and decrease the walltimer
+         */
+        Make10.pointValue += Constants.POINT_INC;
+        Make10.addWallTime -= Constants.TIME_DEC;
+        Make10.showPause(true);
+        Make10.pause();
     },
     
     valueNotMade: function(/*Tile*/ wallTile) {
@@ -543,7 +592,7 @@ var Make10 = {
                     Make10.wallLayer.draw();
                     
                     Make10.currentTile.destroy();                    
-                    Make10.showPlus(0);            
+                    Make10.showGain(false);            
                     Make10.baseLayer.draw();                    
                     
                     Make10.createCurrent();      
@@ -563,19 +612,20 @@ var Make10 = {
 
     },  
     
-    showPlus: function(/*int either 0 or 10*/ points) {
-        if (points === 10) {
-            Make10.plus10.setVisible(true);
+    showGain: function(/*boolean*/ plusPoints) {
+        if (plusPoints) {
+            Make10.plusPoints.get('#plusPointsText')[0].setText('+' + Make10.pointValue);
+            Make10.plusPoints.setVisible(true);
             Make10.baseLayer.draw();
             setTimeout(function() {
-                Make10.plus10.setVisible(false);
+                Make10.plusPoints.setVisible(false);
                 Make10.baseLayer.draw();
             }, 300);
-        } else if (points === 0) {
-            Make10.plus0.setVisible(true);
+        } else {
+            Make10.noPoints.setVisible(true);
             Make10.baseLayer.draw();
             setTimeout(function() {
-                Make10.plus0.setVisible(false);
+                Make10.noPoints.setVisible(false);
                 Make10.baseLayer.draw();
             }, 300);
         }
@@ -634,6 +684,15 @@ var Make10 = {
         }, Make10.addWallTime);        
     },
     
+    showPause: function(bonus) {
+        $('#pause').show();
+        var text = 'Score: '+ Make10.score;
+        if (bonus) {
+            text = 'Bonus earned!<br/><br/>' + text;
+        }
+        $('#currentScore').html(text);
+    },
+    
     about: function(show) {
         if (show) {
             $('#about').slideDown(400, function() {
@@ -689,7 +748,7 @@ $(function() {
     $(window).blur(function(){
         if (Make10.addWallTimer) {
             Make10.pause();
-            $('#pause').show();                    
+            Make10.showPause();
         }
     });
 });

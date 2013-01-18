@@ -19,12 +19,16 @@ html {
     left: 0px;
     height: 100%;
     width: 100%;    
+    font-weight: bold;
 }
 
 #start, #pause {
     background-color: rgba(107,250,102,0.5);
-    font-weight: bold;
     font-size: 40px;
+}
+
+#pause {
+    background-color: rgba(252,246,154,0.9);
 }
 
 #gameover {
@@ -34,7 +38,7 @@ html {
     line-height: 30px;
 }
 
-#play, #score, #resume {
+#play, #score, #resume, #currentScore {
     text-align: center;
     cursor: pointer;    
     margin-left: auto;
@@ -54,6 +58,10 @@ html {
     margin-top: 196px;    
 }
 
+#currentScore {
+    font-size: 28px;
+    margin-top: 30px;
+}
 #title {
     position: relative;
     text-align: center;
