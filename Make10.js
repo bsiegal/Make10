@@ -551,9 +551,12 @@ var Make10 = {
     receiveBonus: function(msg) {
         /*
          * Every increase of bonus threshold points, increase the pointValue and decrease the walltimer
+         * down to min
          */
         Make10.pointValue += Constants.POINT_INC;
-        Make10.addWallTime -= Constants.TIME_DEC;
+        if (Make10.addWallTime > Constants.TIME_DEC * 2) {
+            Make10.addWallTime -= Constants.TIME_DEC;
+        }
         Make10.showPause(msg);
         Make10.pause();
     },
