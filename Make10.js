@@ -732,6 +732,10 @@ $(function() {
         Make10.resume();
         
         $('#start').hide();
+        
+        if ($(window).height() <= 480) {
+            $('html,body').animate({scrollTop: $('#game').offset().top}, 'fast');
+        } 
     });
     $('#resume').click(function() {
         Make10.resume();
@@ -751,4 +755,8 @@ $(function() {
             Make10.showPause();
         }
     });
+    
+    if ($(window).height() < 512) {
+        $('.overlay').css({'height': '107%'});
+    } 
 });
