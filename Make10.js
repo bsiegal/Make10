@@ -316,8 +316,8 @@ var Make10 = {
     noPoints: null,
     /* int points to earn */
     pointValue: 10,
-    /* the value to be over to earn bonus */ 
-    bonusThreshold: Constants.BONUS,
+    /* int number of times to multiply bonus to be threshold as well */ 
+    bonusIndex: 0,
     
     init: function() {
         if (localStorage.MAKE10_MAKE_VALUE) {
@@ -535,12 +535,12 @@ var Make10 = {
                 Make10.addWallRow();
                 Make10.addWallRow();
                 Make10.addWallRow();
-                Make10.receiveBonus();
+                Make10.receiveBonus('+500 bonus!');
             }
             
-            if (Make10.score >= Make10.bonusThreshold) {
-                Make10.receiveBonus();
-                Make10.bonusThreshold += Constants.BONUS;
+            if (Make10.score >= Constants.BONUS * Math.pow(2, Make10.bonusIndex)) {
+                Make10.receiveBonus('Level up!');
+                Make10.bonusIndex++;
             }
             
             Make10.createCurrent();      
@@ -548,13 +548,13 @@ var Make10 = {
         });
     },
     
-    receiveBonus: function() {
+    receiveBonus: function(msg) {
         /*
-         * Every increase of bonusThreshold points, increase the pointValue and decrease the walltimer
+         * Every increase of bonus threshold points, increase the pointValue and decrease the walltimer
          */
         Make10.pointValue += Constants.POINT_INC;
         Make10.addWallTime -= Constants.TIME_DEC;
-        Make10.showPause(true);
+        Make10.showPause(msg);
         Make10.pause();
     },
     
@@ -684,11 +684,11 @@ var Make10 = {
         }, Make10.addWallTime);        
     },
     
-    showPause: function(bonus) {
+    showPause: function(msg) {
         $('#pause').show();
         var text = 'Score: '+ Make10.score;
-        if (bonus) {
-            text = 'Bonus earned!<br/><br/>' + text;
+        if (msg) {
+            text = msg + '<br/><br/>' + text;
         }
         $('#currentScore').html(text);
     },
