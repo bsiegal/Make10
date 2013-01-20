@@ -643,7 +643,7 @@ var Make10 = {
                 html += '<br/><br/>Congratulations!<br/><br/>New high score: ' + Make10.score;
                 localStorage.MAKE10_HI_SCORE = Make10.score;
             } else {
-                html += '<br/><br/>Your score: ' + Make10.score + '<br/><br/>High score:' + localHi;
+                html += '<br/><br/>Your score: ' + Make10.score + '<br/><br/>High score: ' + localHi;
             }
         } else {
             html += '<br/><br/>Congratulations!<br/><br/>New high score: ' + Make10.score;
