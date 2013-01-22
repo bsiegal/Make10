@@ -7,6 +7,7 @@ How to play
 --------------------------------------
 * Try to 'Make 10' as many times as you can before the wall of tiles reaches the top.
 * Break the wall by clicking/touching the tile that will make 10 with your current tile.
+* When making 10 or less, you may choose a Mahjong dots tile style.
 
 **Play at [bsiegal.github.com/Make10](http://bsiegal.github.com/Make10).**
 

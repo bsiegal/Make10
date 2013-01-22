@@ -11,6 +11,7 @@ html {
 #game {
     background-color: steelblue;
     border: 8px solid brown;
+    border-radius: 6px;
 }
 
 .overlay {
@@ -126,4 +127,13 @@ a {
 
 #aboutClose {
     cursor: pointer;
+    border-radius: 20px;
+    background-color: #008000;
+    color: white;
+    font-weight: normal;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 20px;
+    padding: 10px;
 }

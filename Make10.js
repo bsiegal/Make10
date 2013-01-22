@@ -65,39 +65,58 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
         /*
          * Draw the tile
          */
+        
         var tile = new Kinetic.Rect({
             x: x,
             y: y,
             width: Constants.TILE_WIDTH,
             height: Constants.TILE_HEIGHT,
+            cornerRadius: 6,
             name: 'tile',
             fill: 'white',
             stroke: 'black',
             strokeWidth: 1
         });
         group.add(tile);        
-        
-        /*
-         * Add the value as a text
-         */
-        var label = '' + this.value;
-        var text = new Kinetic.Text({
-            x: x + Constants.TILE_WIDTH / 2 - 5 * label.length,
-            y: y + Constants.TILE_HEIGHT / 2 - 5,
-            name: 'text',
-            stroke: 'black',
-//            strokeWidth: 2,
-            fill: '#F9F9F9',
-            text: label,
-            fontSize: 20,
-            fontFamily: 'Calibri',
-            textFill: '#888',
-//            textStroke: '#444',
-//            padding: 7,
-            align: 'center',
-//            verticalAlign: 'middle'
-        });
-        group.add(text);
+
+
+        if (Make10.makeValue <= 10 && Make10.tileStyle === 'dot' && Make10.images['dot' + this.value]) {
+            /*
+             * Use mahjong dot image
+             */
+            var img = new Kinetic.Image({        
+                x: x,
+                y: y,
+                width: Constants.TILE_WIDTH,
+                height: Constants.TILE_HEIGHT,
+                image: Make10.images['dot' + this.value],
+            });
+            group.add(img);
+            
+        } else {
+            /*
+             * Add the value as a text
+             */
+            var label = '' + this.value;
+            var text = new Kinetic.Text({
+                x: x + Constants.TILE_WIDTH / 2 - 5 * label.length,
+                y: y + Constants.TILE_HEIGHT / 2 - 8,
+                name: 'text',
+                stroke: 'black',
+//                strokeWidth: 2,
+                fill: '#F9F9F9',
+                text: label,
+                fontSize: 20,
+                fontFamily: 'Calibri',
+                textFill: '#888',
+//                textStroke: '#444',
+//                padding: 7,
+                align: 'center',
+//                verticalAlign: 'middle'
+            });
+            group.add(text);            
+        }
+
         
         /*
          * mouseout touchend (click and touch, too?) 
@@ -290,6 +309,8 @@ var Make10 = {
     debug: false,
     /* int - the number to add to */
     makeValue: undefined,
+    /* String - 'dot' or default = 'num' */
+    tileStyle: 'num',
     /* Kinetic.Stage - the stage */
     stage: null,
     /* Kinetic.Layer for wall */
@@ -327,28 +348,35 @@ var Make10 = {
         } else {
             Make10.makeValue = 10;
         }
+        if (localStorage.MAKE10_TILE_STYLE) {
+            Make10.tileStyle = localStorage.MAKE10_TILE_STYLE;
+            $('#tileStyle').val(localStorage.MAKE10_TILE_STYLE);
+        } else {
+            Make10.tileStyle = 'num';
+        }
         Make10.stage = new Kinetic.Stage({container: 'game', width: Constants.STAGE_WIDTH, height: Constants.STAGE_HEIGHT});
         /*
          * make the stage container the same size as the stage
          */
         $('#game').css('height', Constants.STAGE_HEIGHT + 'px').css('width', Constants.STAGE_WIDTH + 'px');
         $('#container').css('width', Constants.STAGE_WIDTH + 'px');
-        //Make10.loadImages();
-        Make10.initLayers();       
+        Make10.loadImages();
+        //Make10.initLayers();       
     },    
         
     loadImages: function() {
         Make10.consoleLog('loadImages');
         Make10.loadedImages = 0;
-        for (var i = 1; i <= 9 ; i++) {
-            var src = 'MJt' + i;
+        var max = 9;
+        for (var i = 1; i <= max ; i++) {
+            var src = 'dot' + i;
             var img = new Image();
             img.onload = function() {
-                if (++Make10.loadedImages === 9) {
+                if (++Make10.loadedImages === max) {
                     Make10.initLayers();
                 }
             };
-            img.src = src;
+            img.src = src + '.png';
             Make10.images[src] = img;
         }
     },
@@ -539,8 +567,8 @@ var Make10 = {
             }
             
             if (Make10.score >= Constants.BONUS * Math.pow(2, Make10.bonusIndex)) {
-                Make10.receiveBonus('Level up!');
-                Make10.bonusIndex++;
+                Make10.bonusIndex++; //index starts at 0, but first message should say Level 2
+                Make10.receiveBonus('Level ' + (Make10.bonusIndex + 1));
             }
             
             Make10.createCurrent();      
@@ -666,12 +694,19 @@ var Make10 = {
         var num = parseInt(val);
         if (isNaN(num) || num < 5 || num > 100) {
             val = '10';
+            num = 10;
         }
         localStorage.MAKE10_MAKE_VALUE = val; 
         $('.makeValue').html(val);
-        
-        if (reload) {
+
+        var tileStyle = $('#tileStyle');
+        if (reload) {           
+            localStorage.MAKE10_TILE_STYLE = tileStyle.val();
             document.location.reload(true);              
+        } else if (num <= 10) {
+            tileStyle.removeAttr('disabled');
+        } else if (num > 10) {
+            tileStyle.attr('disabled', 'true');
         }
     },
     
@@ -726,6 +761,7 @@ $(function() {
     $('#aboutClose').click(function() {
         if ($('#about').is(':visible')) {
             $('#about').slideUp();
+            Make10.setMakeValue(true);
         }
     });   
     
@@ -736,7 +772,7 @@ $(function() {
         
         $('#start').hide();
         
-        if ($(window).height() <= 480) {
+        if ($(window).height() <= 512) {
             $('html,body').animate({scrollTop: $('#game').offset().top}, 'fast');
         } 
     });
@@ -746,8 +782,9 @@ $(function() {
         $('#pause').hide();
     });
     
-    $('#makeValue').change(function() {
-        Make10.setMakeValue(true);
+    var makeValue = $('#makeValue');
+    makeValue.change(function() {
+        Make10.setMakeValue(parseInt(makeValue.val()) > 10);
     }).keyup(function() {
         Make10.setMakeValue(false);
     });
