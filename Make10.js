@@ -190,10 +190,65 @@ function TileWall() {
         tile.col = col;
     };
     
+    
+    this.removeAdjacents = function(/*int*/ value, /*int*/ row, /*int*/ col) {
+        if (row < Constants.MAX_ROWS && col < Constants.MAX_COLS && this.tiles[row][col] && this.tiles[row][col].value === value) {
+            this.tiles[row][col].destroy();
+            this.tiles[row][col] = false;
+            Make10.pointIndex++;
+            
+            Make10.consoleLog('TileWall.removeAdjacents returning not false');
+            return this.removeAdjacents(value, row + 1, col) ||
+                this.removeAdjacents(value, row - 1, col) ||
+                this.removeAdjacents(value, row, col + 1) ||
+                this.removeAdjacents(value, row, col - 1);
+        } else {
+            Make10.consoleLog('TileWall.removeAdjacents returning false');
+            return false;
+        }
+          
+    };
+    
+    this.transitionDown = function() {
+        Make10.consoleLog('TileWall transitionDown');
+        /*
+         * Fill any gaps by dropping down if there is
+         * no tile beneath (no need to test row 0)
+         */
+        var atLeastOne = false;
+        for (var i = Constants.MAX_ROWS - 1; i > 1; i--) {
+            for (var j = 0; j < Constants.MAX_COLS; j++) {
+                var tile = this.tiles[i][j];
+                if (tile) {
+                    if (!this.tiles[i - 1][j]) {
+                        tile.row--;
+                        this.tiles[tile.row][j] = tile;                
+                        tile.group.transitionTo({
+                          y: -Constants.TILE_HEIGHT * tile.row,
+                          duration: 0.3
+                        });
+                        /*
+                         * The original row,col should be nullified
+                         */
+                        this.tiles[i][j] = false;
+                        atLeastOne = true;
+                    }
+                }
+            }
+        }
+        /*
+         * If there was a double gap, wouldn't have been filled in first sweep, 
+         * so sweep again
+         */
+        if (atLeastOne) {
+            this.transitionDown();
+        }
+    };
+    
     this.removeTile = function(/*int*/ row, /*int*/ col) {
         this.tiles[row][col].destroy();
         this.tiles[row][col] = false;        
-        
+        Make10.pointIndex++;
         /*
          * Move all the ones above in same col down one row
          */
@@ -300,13 +355,24 @@ function TileWall() {
         return true;
     };
     
+    this.clearWall = function() {
+        for (var i = 0; i < Constants.MAX_ROWS; i++) {
+            for (var j = 0; j < Constants.MAX_COLS; j++) {
+                if (this.tiles[i][j]) {
+                    this.tiles[i][j].destroy();
+                    this.tiles[i][j] = false;
+                }
+            }
+        }  
+        
+    };
     this.init();
 }
 
 
 
 var Make10 = {
-    debug: false,
+    debug: true,
     /* int - the number to add to */
     makeValue: undefined,
     /* String - 'dot' or default = 'num' */
@@ -339,6 +405,8 @@ var Make10 = {
     pointValue: 10,
     /* int number of times to multiply bonus to be threshold as well */ 
     bonusIndex: 0,
+    /* int point multiplier for this valueMade round */
+    pointIndex: 0,
     
     init: function() {
         if (localStorage.MAKE10_MAKE_VALUE) {
@@ -536,6 +604,7 @@ var Make10 = {
     },
     
     valueMade: function(/*Tile*/ wallTile) {
+        Make10.pointIndex = 0;
         Make10.consoleLog('valueMade: '+ Make10.currentTile.value + ' + ' + wallTile.value + ' = '+ Make10.makeValue + ' :)');
         /*
          * It's a match!
@@ -546,11 +615,13 @@ var Make10 = {
          */
         Make10.currentTile.transitionTo(wallTile.col * Constants.TILE_WIDTH, Constants.STAGE_HEIGHT - Constants.TILE_HEIGHT * wallTile.row, function() {
             Make10.tileWall.removeTile(wallTile.row, wallTile.col);                    
+//            Make10.tileWall.removeAdjacents(wallTile.value, wallTile.row, wallTile.col);            
             Make10.wallLayer.draw();
+//            Make10.tileWall.transitionDown();
             
             Make10.currentTile.destroy();
             
-            Make10.showGain(true);            
+            Make10.showGain(Make10.pointValue * Make10.pointIndex);            
             Make10.baseLayer.draw();
                         
             Make10.score += Make10.pointValue;
@@ -562,13 +633,16 @@ var Make10 = {
                 Make10.score += Constants.BONUS;       
                 Make10.addWallRow();
                 Make10.addWallRow();
-                Make10.addWallRow();
                 Make10.receiveBonus('+500 bonus!');
             }
             
             if (Make10.score >= Constants.BONUS * Math.pow(2, Make10.bonusIndex)) {
                 Make10.bonusIndex++; //index starts at 0, but first message should say Level 2
                 Make10.receiveBonus('Level ' + (Make10.bonusIndex + 1));
+                Make10.tileWall.clearWall();
+                Make10.wallLayer.draw();
+                Make10.addWallRow();
+                Make10.addWallRow();
             }
             
             Make10.createCurrent();      
@@ -623,7 +697,7 @@ var Make10 = {
                     Make10.wallLayer.draw();
                     
                     Make10.currentTile.destroy();                    
-                    Make10.showGain(false);            
+                    Make10.showGain(0);            
                     Make10.baseLayer.draw();                    
                     
                     Make10.createCurrent();      
@@ -643,22 +717,22 @@ var Make10 = {
 
     },  
     
-    showGain: function(/*boolean*/ plusPoints) {
-        if (plusPoints) {
-            Make10.plusPoints.get('#plusPointsText')[0].setText('+' + Make10.pointValue);
+    showGain: function(/*int*/ plusPoints) {
+        if (plusPoints > 0) {
+            Make10.plusPoints.get('#plusPointsText')[0].setText('+' + plusPoints);
             Make10.plusPoints.setVisible(true);
             Make10.baseLayer.draw();
             setTimeout(function() {
                 Make10.plusPoints.setVisible(false);
                 Make10.baseLayer.draw();
-            }, 300);
+            }, 1000);
         } else {
             Make10.noPoints.setVisible(true);
             Make10.baseLayer.draw();
             setTimeout(function() {
                 Make10.noPoints.setVisible(false);
                 Make10.baseLayer.draw();
-            }, 300);
+            }, 500);
         }
     },
     
