@@ -152,15 +152,8 @@ function Tile(/*int*/ value, /*int*/ x, /*int*/ y, /*String*/ tileType) {
     };
     
     this.destroy = function() {
-        Make10.consoleLog('destroy group: ');
-        Make10.consoleLog(this.group);
-        // this is not a method on group this.group.destroy();
-        /*
-         * Destroy all children and remove group
-         * TODO
-         */
-        
-        this.group.remove();
+        Make10.consoleLog('destroy group ');        
+        this.group.destroy();
     };
     
     this.init(x, y);
@@ -372,7 +365,7 @@ function TileWall() {
 
 
 var Make10 = {
-    debug: true,
+    debug: false,
     /* int - the number to add to */
     makeValue: undefined,
     /* String - 'dot' or default = 'num' */
@@ -725,14 +718,14 @@ var Make10 = {
             setTimeout(function() {
                 Make10.plusPoints.setVisible(false);
                 Make10.baseLayer.draw();
-            }, 1000);
+            }, 400);
         } else {
             Make10.noPoints.setVisible(true);
             Make10.baseLayer.draw();
             setTimeout(function() {
                 Make10.noPoints.setVisible(false);
                 Make10.baseLayer.draw();
-            }, 500);
+            }, 400);
         }
     },
     
