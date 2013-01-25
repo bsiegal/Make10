@@ -41,14 +41,21 @@
                 </div>
                 <h2 style="display:none">How to play</h2>
                 <ul>
-                    <li>Try to 'Make <span class="makeValue">10</span>' as many times as you can before the wall of tiles reaches the top.</li>
+                    <li>'Make <span class="makeValue">10</span>' as many times as you can before the wall of tiles reaches the top.</li>
                     <li>Break the wall by clicking/touching the tile that will make <span class="makeValue">10</span> with your current tile.</li>
-                    <li>When making 10 or less, you may select tile style: 
+                    <li>Speed increases.  Initial speed: 
+                        <select id="speed">
+                            <option value="36000">Slow</option>
+                            <option value="24000">Medium</option>
+                            <option value="12000" selected="true">Fast</option>
+                        </select>
+                    </li>
+                    <li>Tile style for up to Make 10: 
 	                    <select id="tileStyle">
 	                        <option value="num">Numbers</option>
 	                        <option value="dot">Mahjong dots</option>
 	                    </select>
-                       </li>                                        
+                    </li>                                        
                 </ul>
                 <h2>Source</h2>
                 <ul>

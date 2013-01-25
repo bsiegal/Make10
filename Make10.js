@@ -415,6 +415,13 @@ var Make10 = {
         } else {
             Make10.tileStyle = 'num';
         }
+        if (localStorage.MAKE10_SPEED) {
+            Make10.addWallTime = parseInt(localStorage.MAKE10_SPEED);
+            $('#speed').val(localStorage.MAKE10_SPEED);
+        } else {
+            Make10.addWallTime = 12000;
+        }
+        
         Make10.stage = new Kinetic.Stage({container: 'game', width: Constants.STAGE_WIDTH, height: Constants.STAGE_HEIGHT});
         /*
          * make the stage container the same size as the stage
@@ -769,6 +776,7 @@ var Make10 = {
         var tileStyle = $('#tileStyle');
         if (reload) {           
             localStorage.MAKE10_TILE_STYLE = tileStyle.val();
+            localStorage.MAKE10_SPEED = $('#speed').val();
             document.location.reload(true);              
         } else if (num <= 10) {
             tileStyle.removeAttr('disabled');
